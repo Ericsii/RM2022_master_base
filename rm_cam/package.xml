@@ -7,7 +7,7 @@
   Camera package for SCRM_ROS. Provide camera drivers for each cam.
   </description>
   <maintainer email="ericc_feng@qq.com">Eric Feng</maintainer>
-  <license>TODO: License declaration</license>
+  <license>GNU General Public License v3.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
