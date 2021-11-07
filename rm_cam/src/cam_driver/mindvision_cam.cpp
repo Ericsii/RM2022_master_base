@@ -215,11 +215,11 @@ namespace rm_cam
         
         // 进行一次触发
         status = CameraSoftTrigger(hCamera_);
-        if (status == CAMERA_STATUS_SUCCESS)
+        if (status != CAMERA_STATUS_SUCCESS)
         {
             RCLCPP_WARN(
                 node_->get_logger(),
-                "Trigger failed!"
+                "ERROR [%d] - Trigger failed!", status
             );
         }
 

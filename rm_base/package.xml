@@ -6,11 +6,13 @@
   <description>
   Basic transporter pacakge for SCURM_ROS.
   </description>
-  <maintainer email="ericc_feng@qq.com">scurm</maintainer>
+  <maintainer email="1063760288@qq.com">Tom Wen</maintainer>
   <license>GNU General Public License v3.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <build_depend>rm_interfaces</build_depend>
+  <exec_depend>rm_interfaces</exec_depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

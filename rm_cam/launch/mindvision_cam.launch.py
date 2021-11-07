@@ -6,7 +6,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
 
-    param_path = os.path.join(get_package_share_directory("rm_cam"), "config/cam_param.yml")
+    param_path = os.path.join(get_package_share_directory("rm_cam"), "config/cam_param.yaml")
 
     mv_cam_node = Node(
         package="rm_cam",

@@ -23,7 +23,7 @@ set(msg_files
 )
 
 set(srv_files
-  "srv/CameraInfo.srv"
+  "srv/GetCameraInfo.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

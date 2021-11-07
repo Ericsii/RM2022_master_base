@@ -110,8 +110,8 @@ namespace rm_cam
         }
 
         // 自定义QoS
-        node_->declare_parameter("custom_qos", false);
-        auto custom_qos = node_->get_parameter("custom_qos").as_bool();
+        node_->declare_parameter("best_effort_qos", false);
+        auto custom_qos = node_->get_parameter("best_effort_qos").as_bool();
 
         // create image publisher
         if (custom_qos)
@@ -135,7 +135,7 @@ namespace rm_cam
 
         // create CameraInfo service
         using namespace std::placeholders;
-        camera_info_service_ = node_->create_service<rm_interfaces::srv::CameraInfo>(
+        camera_info_service_ = node_->create_service<rm_interfaces::srv::GetCameraInfo>(
             camera_name + "/get_camera_info",
             std::bind(&CamServer::camera_info_callback, this, _1, _2, _3));
 
@@ -146,10 +146,11 @@ namespace rm_cam
 
     void CamServer::timer_callback()
     {
-        if (cam_interface_->grab_img(img_))
+        if (cam_interface_->grab_img(img_, time_stamp_ms_))
         {
             auto header = std_msgs::msg::Header();
-            header.stamp = node_->now();
+            header.stamp.sec = static_cast<int32_t>(time_stamp_ms_ * 0.001);
+            header.stamp.nanosec = static_cast<uint32_t>((time_stamp_ms_ - (header.stamp.sec * 1000)) * 0.000001);
 
             // publish image msg
             sensor_msgs::msg::Image::SharedPtr img_msg = cv_bridge::CvImage(
@@ -185,8 +186,8 @@ namespace rm_cam
 
     void CamServer::camera_info_callback(
         const std::shared_ptr<rmw_request_id_t> request_header,
-        const rm_interfaces::srv::CameraInfo::Request::SharedPtr request,
-        rm_interfaces::srv::CameraInfo::Response::SharedPtr response)
+        const rm_interfaces::srv::GetCameraInfo::Request::SharedPtr request,
+        rm_interfaces::srv::GetCameraInfo::Response::SharedPtr response)
     {
         (void)request_header;
         (void)request;

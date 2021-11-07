@@ -13,6 +13,11 @@ namespace rm_cam
         node_->declare_parameter("sn", "");
         std::string cam_sn = node_->get_parameter("sn").as_string();
 
+        RCLCPP_INFO(
+            node_->get_logger(), 
+            "Try to open camera at sn:%s", cam_sn.c_str()
+        );
+
         cam_dev_ = std::make_shared<MindVisionCam>(cam_sn, node_);
 
         if (!cam_dev_->open()) {

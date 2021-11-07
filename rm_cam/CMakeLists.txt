@@ -59,6 +59,7 @@ set(cam_drivers
 add_library(${PROJECT_NAME} SHARED
     ${cam_drivers}
     "src/cam_server.cpp"
+    "src/cam_client.cpp"
     "src/virtual_cam_node.cpp"
     "src/mindvision_cam_node.cpp"
 )
