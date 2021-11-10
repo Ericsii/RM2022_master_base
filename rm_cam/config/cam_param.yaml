@@ -2,8 +2,20 @@
     ros__parameters:
         camera_name: 'mv_camera'
         sn: '048021610077'
+        config_path: './src/rm_cam/config/048021610077.Config'
         camera_k: [1976.692249, 0.000000, 662.654253, 0.000000, 1976.682281, 528.898560, 0.000000, 0.000000, 1.000000]
         camera_d: [-0.085397, 0.433046, 0.002383, 0.003054, 0.000000]
         fps: 100
         best_effort_qos: false
-        config_path: '/home/scurm/Coding/ericsic_ros_ws/src/rm_cam/config/048021610077.Config'
+
+/daheng_camera:
+    ros__parameters:
+        camera_name: 'daheng_camera'
+        sn: 'KN0210040024'
+        config_path: './src/rm_cam/config/daheng_config/KN0210040024.txt'
+        lut_config_path: ''
+        lut_detail: [60., 2., 0.] # (!必须使用小数形式)对比度调节参数[-50-100] 伽马调节参数[0.1-10] 亮度调节参数[-150-150]
+        camera_k: [1552.7, 0.0, 640.0, 0.0, 1537.9, 360.0, 0.0, 0.0, 1.0]
+        camera_d: [0.0, 0.0, 0.0, 0.0, 0.0]
+        fps: 100
+        best_effort_qos: false

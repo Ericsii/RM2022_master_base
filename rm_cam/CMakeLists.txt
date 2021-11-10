@@ -37,7 +37,7 @@ endif()
 
 # DaHengGxiSDK
 if(WITH_GXISDK)
-    include_directories("dependencies/DaHengGxiSDK/inc")
+    include_directories("dependencies/DaHengGxiSDK/include")
     if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
         link_directories("dependencies/DaHengGxiSDK/lib/x86_64")
     elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
@@ -53,6 +53,7 @@ include_directories(include)
 set(cam_drivers
     "src/cam_driver/virtual_cam.cpp"
     "src/cam_driver/mindvision_cam.cpp"
+    "src/cam_driver/daheng_cam.cpp"
 )
 
 # 创建shared lib
@@ -62,6 +63,7 @@ add_library(${PROJECT_NAME} SHARED
     "src/cam_client.cpp"
     "src/virtual_cam_node.cpp"
     "src/mindvision_cam_node.cpp"
+    "src/daheng_cam_node.cpp"
 )
 
 if(WITH_MVSDK)
@@ -90,8 +92,11 @@ ament_export_dependencies(${dependencies})
 add_executable(virtual_cam "src/virtual_cam_node_main.cpp")
 target_link_libraries(virtual_cam ${PROJECT_NAME})
 # MindVisionCamera可执行入口
-add_executable(mindvision_cam "src/mindvision_node_main.cpp")
+add_executable(mindvision_cam "src/mindvision_cam_node_main.cpp")
 target_link_libraries(mindvision_cam ${PROJECT_NAME})
+# DahengCamera可执行入口
+add_executable(daheng_cam "src/daheng_cam_node_main.cpp")
+target_link_libraries(daheng_cam ${PROJECT_NAME})
 
 # register component nodes
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::VirtualCamNode")
@@ -114,7 +119,7 @@ install(
 
 # install executable entry
 install(
-    TARGETS virtual_cam mindvision_cam
+    TARGETS virtual_cam mindvision_cam daheng_cam
     DESTINATION lib/${PROJECT_NAME}
 )
 

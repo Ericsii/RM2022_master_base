@@ -1,3 +1,10 @@
+/*
+ * @Author: holakk
+ * @Date: 2021-11-10 17:59:31
+ * @LastEditors: holakk
+ * @LastEditTime: 2021-11-10 18:00:42
+ * @Description: file content
+ */
 #include "rm_cam/mindvision_cam_node.hpp"
 
 #include <memory>
