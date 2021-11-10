@@ -6,41 +6,47 @@
 namespace rm_cam
 {
     MindVisionCamNode::MindVisionCamNode(
-        const rclcpp::NodeOptions &options
-    ) {
+        const rclcpp::NodeOptions &options)
+    {
         node_ = std::make_shared<rclcpp::Node>("mv_cam", options);
 
         node_->declare_parameter("sn", "");
+        node_->declare_parameter("config_path", "");
+
         std::string cam_sn = node_->get_parameter("sn").as_string();
+        std::string config_path = node_->get_parameter("config_path").as_string();
 
-        RCLCPP_INFO(
-            node_->get_logger(), 
-            "Try to open camera at sn:%s", cam_sn.c_str()
-        );
-
-        cam_dev_ = std::make_shared<MindVisionCam>(cam_sn, node_);
-
-        if (!cam_dev_->open()) {
-            RCLCPP_WARN(
-                node_->get_logger(), 
-                "Try to open camera failed!"
-            );
-            return;
-        }
-        
         RCLCPP_INFO(
             node_->get_logger(),
-            "Writing camera config to file."
-        );
-        if (!cam_dev_->save_config(cam_sn + ".config"))
+            "Try to open camera at sn:%s", cam_sn.c_str());
+        RCLCPP_INFO(
+            node_->get_logger(),
+            "Camera config file path:%s", config_path.c_str());
+
+        cam_dev_ = std::make_shared<MindVisionCam>(cam_sn, node_, config_path);
+
+        if (config_path == "")
         {
-            RCLCPP_WARN(
+            if (!cam_dev_->open())
+            {
+                RCLCPP_WARN(
+                    node_->get_logger(),
+                    "Try to open camera failed!");
+                return;
+            }
+
+            RCLCPP_INFO(
                 node_->get_logger(),
-                "Write failed!"
-            );
-            return;
+                "Writing camera config to file.");
+            if (!cam_dev_->save_config(cam_sn + ".config"))
+            {
+                RCLCPP_WARN(
+                    node_->get_logger(),
+                    "Write failed!");
+                return;
+            }
+            cam_dev_->close();
         }
-        cam_dev_->close();
 
         // create server
         cam_server_ = std::make_shared<CamServer>(node_, cam_dev_);

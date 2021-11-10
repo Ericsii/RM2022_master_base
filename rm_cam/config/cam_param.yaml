@@ -2,10 +2,8 @@
     ros__parameters:
         camera_name: 'mv_camera'
         sn: '048021610077'
-        camera_k: [1552.7, 0.0, 640.0, 0.0, 1537.9, 360.0, 0.0, 0.0, 1.0]
-        camera_d: [0.0, 0.0, 0.0, 0.0, 0.0]
+        camera_k: [1976.692249, 0.000000, 662.654253, 0.000000, 1976.682281, 528.898560, 0.000000, 0.000000, 1.000000]
+        camera_d: [-0.085397, 0.433046, 0.002383, 0.003054, 0.000000]
         fps: 100
         best_effort_qos: false
-        auto_exposure: 0
-        exposure: 3000
-        saturation: 0
+        config_path: '/home/scurm/Coding/ericsic_ros_ws/src/rm_cam/config/048021610077.Config'

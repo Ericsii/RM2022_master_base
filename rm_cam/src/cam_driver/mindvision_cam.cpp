@@ -305,6 +305,9 @@ namespace rm_cam
         CameraSetTriggerMode(hCamera_, 1);
         CameraSetTriggerCount(hCamera_, 1);
 
+        // 设置输出格式BGR
+        CameraSetIspOutFormat(hCamera_, CAMERA_MEDIA_TYPE_BGR8);
+
         return true;
     }
 
