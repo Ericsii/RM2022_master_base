@@ -160,11 +160,14 @@ namespace rm_cam
             return false;
         }
         
-        CameraSdkStatus status;
+        CameraSdkStatus status = CAMERA_STATUS_SUCCESS;
         tSdkFrameHead header;
 
-        // 进行一次触发
-        status = CameraSoftTrigger(hCamera_);
+        if(is_soft_trigger_)
+        {
+            // 进行一次触发
+            status = CameraSoftTrigger(hCamera_);
+        }
 
         if (status != CAMERA_STATUS_SUCCESS)
         {
@@ -175,7 +178,7 @@ namespace rm_cam
         }
 
         // 读取帧 超时100ms
-        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 100);
+        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 20);
         if (status != CAMERA_STATUS_SUCCESS)
         {
             RCLCPP_WARN(
@@ -210,11 +213,15 @@ namespace rm_cam
             return false;
         }
         
-        CameraSdkStatus status;
+        CameraSdkStatus status = CAMERA_STATUS_SUCCESS;
         tSdkFrameHead header;
         
-        // 进行一次触发
-        status = CameraSoftTrigger(hCamera_);
+        if (is_soft_trigger_)
+        {
+            // 进行一次触发
+            status = CameraSoftTrigger(hCamera_);
+        }
+
         if (status != CAMERA_STATUS_SUCCESS)
         {
             RCLCPP_WARN(
@@ -224,7 +231,7 @@ namespace rm_cam
         }
 
         // 读取帧 超时100ms
-        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 100);
+        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 20);
         if (status != CAMERA_STATUS_SUCCESS)
         {
             RCLCPP_WARN(
@@ -302,8 +309,12 @@ namespace rm_cam
         this->set_parameter(CamParam::Saturation, saturation);
 
         // 设置相机软触发 每次触发帧数固定1
-        CameraSetTriggerMode(hCamera_, 1);
-        CameraSetTriggerCount(hCamera_, 1);
+        int triggerMode = 0;
+        CameraGetTriggerMode(hCamera_, &triggerMode);
+        if (triggerMode)
+        {
+            is_soft_trigger_ = true;
+        }
 
         // 设置输出格式BGR
         CameraSetIspOutFormat(hCamera_, CAMERA_MEDIA_TYPE_BGR8);
@@ -335,6 +346,7 @@ namespace rm_cam
         // 设置相机软触发 每次触发帧数固定1
         CameraSetTriggerMode(hCamera_, 1);
         CameraSetTriggerCount(hCamera_, 1);
+        is_soft_trigger_ = true;
 
         // 曝光设置
         int auto_exposure, exposure;

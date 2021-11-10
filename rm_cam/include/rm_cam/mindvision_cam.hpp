@@ -38,17 +38,18 @@ namespace rm_cam
         bool config_camera();
 
     private:
-        std::string         camera_sn_;         // 相机sn号
+        std::string         camera_sn_;                 // 相机sn号
         
         rclcpp::Node::SharedPtr node_;
-        std::string         config_path_;       // 相机配置文件路径
+        std::string         config_path_;               // 相机配置文件路径
 
-        int                 hCamera_;           // 相机描述子
-        tSdkCameraDevInfo   cameraList_[16];    // 相机列表(仅获取16个相机)
-        tSdkCameraCapbility cameraInfo_;        // 相机特征信息
+        int                 hCamera_;                   // 相机描述子
+        tSdkCameraDevInfo   cameraList_[16];            // 相机列表(仅获取16个相机)
+        tSdkCameraCapbility cameraInfo_;                // 相机特征信息
 
-        BYTE*               pFrameBuffer_;      // RAW图像缓存
-        bool                is_open_;           // 相机状态
+        BYTE*               pFrameBuffer_;              // RAW图像缓存
+        bool                is_soft_trigger_{false};    // 是否软触发
+        bool                is_open_;                   // 相机状态
     };
 } // namespace rm_cam
 
