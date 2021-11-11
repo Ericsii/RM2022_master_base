@@ -16,7 +16,7 @@ def generate_launch_description():
             'camera_name': 'virtual_camera',
             'camera_k': [1552.7, 0.0, 640.0, 0.0, 1537.9, 360.0, 0.0, 0.0, 1.0],
             'camera_d': [0.0, 0.0, 0.0, 0.0, 0.0],
-            'fps': 30,
+            'fps': 200,
             "custom_qos": True
         }],
         output='screen'

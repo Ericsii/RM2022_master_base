@@ -4,19 +4,20 @@
 
 namespace rm_cam
 {
-    VirtualCam::VirtualCam(int mode, const std::string &path)
+    VirtualCam::VirtualCam(
+        int mode, 
+        const std::string &path, 
+        rclcpp::Node::SharedPtr node) : current_mode_(mode), path_(path), node_(node)
     {
         _param[CamParam::Width] = 0;
         _param[CamParam::Height] = 0;
         _param[CamParam::Fps] = 0;
         if (mode == IMAGE_MODE)
         {
-            path_ = path;
             current_mode_ = IMAGE_MODE;
         }
         else if (mode == VIDEO_MODE)
         {
-            path_ = path;
             current_mode_ = VIDEO_MODE;
         }
         is_open_ = false;

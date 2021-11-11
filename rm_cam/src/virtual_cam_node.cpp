@@ -18,11 +18,11 @@ namespace rm_cam
         // create device
         if (!image_path.empty())
         {
-            cam_dev_ = std::make_shared<VirtualCam>(VirtualCam::IMAGE_MODE, image_path);
+            cam_dev_ = std::make_shared<VirtualCam>(VirtualCam::IMAGE_MODE, image_path, node_);
         }
         else if (!video_path.empty())
         {
-            cam_dev_ = std::make_shared<VirtualCam>(VirtualCam::VIDEO_MODE, video_path);
+            cam_dev_ = std::make_shared<VirtualCam>(VirtualCam::VIDEO_MODE, video_path, node_);
         }
         else
         {

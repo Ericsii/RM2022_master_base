@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "rclcpp/rclcpp.hpp"
 #include "opencv2/opencv.hpp"
 #include "rm_cam/cam_interface.hpp"
 
@@ -19,19 +20,26 @@ namespace rm_cam
             VIDEO_MODE
         };
 
-        explicit VirtualCam(int mode, const std::string &path);
+        explicit VirtualCam(int mode, const std::string &path, rclcpp::Node::SharedPtr node);
 
         bool open() override;
         bool close() override;
         bool is_open() override;
         bool grab_img(cv::Mat &image) override;
-        bool grab_img(cv::Mat &image, double &timestamp_ms) {
-            (void)image;
-            (void)timestamp_ms;
+        bool grab_img(cv::Mat &image, double &timestamp_ms)
+        {
+            if (this->grab_img(image))
+            {
+                auto node_time = node_->now();
+                timestamp_ms = 0.1 * node_time.seconds();
+                return true;
+            }
             return false;
         }
 
     private:
+        rclcpp::Node::SharedPtr node_;
+
         std::string path_; // 路径(image/video)
         cv::Mat img_;      // only for IMAGE_MODE
 
