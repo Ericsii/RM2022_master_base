@@ -8,7 +8,6 @@
 #include <thread>
 #include <memory>
 #include <iostream>
-#include <time.h>
 
 namespace rm_base
 {
@@ -127,12 +126,11 @@ namespace rm_base
     {
         if(this->SerialSend)
         {
-            this->time_send = rclcpp::Clock().now();
-
             this->tid++;
             //----第一次发送----//
             if (this->debug)
             {
+                this->time_send = rclcpp::Clock().now();
                 if (this->tid == 1)
                     RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Send Init ", this->serial_name.c_str(), this->serial_bps);
                 else
@@ -142,20 +140,20 @@ namespace rm_base
             //----将数据导入数据包中----//
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            // packet.load_data<float>(msg->position.yaw, 5);
-            // packet.load_data<float>(msg->position.pitch, 9);
-
-            packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-            packet.load_data<unsigned char>(0xaa, 6);
+            packet.load_data<float>(msg->position.yaw, 5);
+            packet.load_data<float>(msg->position.pitch, 9);
 
             /** RMUA
-            packet.load_data<float>(msg->velocity.yaw, 9);
-            packet.load_data<float>(msg->velocity.pitch, 9);
-            packet.load_data<float>(0x00, 9);
+            packet.load_data<float>(msg->velocity.yaw, 13);
+            packet.load_data<float>(msg->velocity.pitch, 17);
+            packet.load_data<int>(shoot, 21);
             **/
 
             if(this->debug)
             {
+                // packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
+                // packet.load_data<unsigned char>(0xaa, 6);
+
                 // packet.load_data<unsigned char>(frame_type::ChangeShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
 
@@ -183,13 +181,16 @@ namespace rm_base
 
             packet.set_check_byte();        //设置校验位字节（check_byte）为BCC校验码
             bool send_ack = this->packet_tool_->send_packet(packet);
-            if (!send_ack)
-                RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!"); 
 
-            double time1, time2;
-            time1 = this->time_send.seconds();
-            time2 = rclcpp::Clock().now().seconds();
-            RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
+            if (this->debug)
+            {
+                if (!send_ack)
+                    RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!"); 
+                double time1, time2;
+                time1 = this->time_send.seconds();
+                time2 = rclcpp::Clock().now().seconds();
+                RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
+            }
             
             //设定数据发送延迟
             // std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -257,12 +258,11 @@ namespace rm_base
             {
                 if (this->packet_tool_->recv_packet(packet))
                 {
-                    this->time_recv = rclcpp::Clock().now();
-
                     //----接收包编号----//
                     /*recv_tid【1-4】:包编号位 0x00000000-0xffffffff*/
                     packet.unload_data(recv_tid, 1);
                     if(this->debug)
+                        this->time_recv = rclcpp::Clock().now();
                         RCLCPP_INFO(node_->get_logger(), "RECV packet [%d]", recv_tid);
 
                     //------接收包种类------//
@@ -279,7 +279,7 @@ namespace rm_base
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Mode Change] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
                             RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode); 
 
                         // if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
@@ -305,7 +305,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::ChangeShootSpeed)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Shoot-speed Get] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
                         int shoot_speed = 0;
                         packet.unload_data(shoot_speed, 6);
                         if(shoot_speed > 0)
@@ -317,7 +317,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::ChangeColor)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Color Get] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Color Get]");
                         unsigned char color = 0x00;
                         packet.unload_data(color, 6);
                         if(color == 0xbb)
@@ -337,7 +337,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::GimbalAngleControl)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Gimbel Angel Position] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Gimbel Angel Position]");
                         // uint32_t stm_tid = 0;
                         float yaw = 0.0, pitch = 0.0, roll = 0.0;
                         float time_stamp = 0.0;
@@ -368,15 +368,16 @@ namespace rm_base
                             RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
                         }
                     }
-                
-                    double time1, time2, time3;
-                    time1 = this->time_recv.seconds();
-                    time2 = rclcpp::Clock().now().seconds();
-                    time3 = this->time_send.seconds();
-                    RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
-                    RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
+                    if (this->debug)
+                    {
+                        double time1, time2, time3;
+                        time1 = this->time_recv.seconds();
+                        time2 = rclcpp::Clock().now().seconds();
+                        time3 = this->time_send.seconds();
+                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
+                        RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
+                    }
                 }
-
                 // else
                 // {
                 //     RCLCPP_INFO(node_->get_logger(), "Serial Recv Fial!!!");

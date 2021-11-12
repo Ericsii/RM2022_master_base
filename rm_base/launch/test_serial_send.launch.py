@@ -9,11 +9,11 @@ def generate_launch_description():
             # namespace='rm_base',
             executable='simple_robot_base',
             name = 'send',
-            output = 'screen',
+            output = 'screen',  
             parameters=[
-                {"serial_name": "/dev/ttyUSB0"},
+                {"serial_name": "/dev/ttyACM1"},
                 {"serial_send": True},
-                {"serial_recv": False},
+                {"serial_recv": True},
                 {"serial_bps": 115200},
                 {"debug": True}
             ]

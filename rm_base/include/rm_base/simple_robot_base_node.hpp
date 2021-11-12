@@ -94,6 +94,8 @@ namespace rm_base
         int mode = 0;                       //模式：0-正常，1-自瞄，2-小符，3-大符
         int color = 1;                      //颜色：0-blue，1-red
         int shoot_speed = 18;               //射速
+        rclcpp::Time time_send;
+        rclcpp::Time time_recv;
     };
 }
 
