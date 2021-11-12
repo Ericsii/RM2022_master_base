@@ -8,6 +8,7 @@
 #include <thread>
 #include <memory>
 #include <iostream>
+#include <time.h>
 
 namespace rm_base
 {
@@ -126,6 +127,8 @@ namespace rm_base
     {
         if(this->SerialSend)
         {
+            this->time_send = rclcpp::Clock().now();
+
             this->tid++;
             //----第一次发送----//
             if (this->debug)
@@ -139,8 +142,11 @@ namespace rm_base
             //----将数据导入数据包中----//
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            packet.load_data<float>(msg->position.yaw, 5);
-            packet.load_data<float>(msg->position.pitch, 9);
+            // packet.load_data<float>(msg->position.yaw, 5);
+            // packet.load_data<float>(msg->position.pitch, 9);
+
+            packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
+            packet.load_data<unsigned char>(0xaa, 6);
 
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 9);
@@ -150,9 +156,6 @@ namespace rm_base
 
             if(this->debug)
             {
-                // packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-                // packet.load_data<unsigned char>(0xaa, 6);
-
                 // packet.load_data<unsigned char>(frame_type::ChangeShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
 
@@ -160,11 +163,10 @@ namespace rm_base
                 // packet.load_data<unsigned char>(0xbb, 6);
 
                 // packet.load_data<unsigned char>(frame_type::GimbalAngleControl, 5);
-                // packet.load_data<uint32_t>(this->tid, 6);
-                // packet.load_data<float>(1.0, 10);
-                // packet.load_data<float>(2.0, 14);
-                // packet.load_data<float>(3.0, 18);
-                // packet.load_data<float>(4913.656, 22);
+                // packet.load_data<float>(1.0, 6);
+                // packet.load_data<float>(2.0, 10);
+                // packet.load_data<float>(3.0, 14);
+                // packet.load_data<float>(4913.656, 18);
 
                 // uint8_t bcc = 0x11;
                 uint32_t id = 0;
@@ -182,7 +184,12 @@ namespace rm_base
             packet.set_check_byte();        //设置校验位字节（check_byte）为BCC校验码
             bool send_ack = this->packet_tool_->send_packet(packet);
             if (!send_ack)
-                RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!");            
+                RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!"); 
+
+            double time1, time2;
+            time1 = this->time_send.seconds();
+            time2 = rclcpp::Clock().now().seconds();
+            RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
             
             //设定数据发送延迟
             // std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -250,6 +257,8 @@ namespace rm_base
             {
                 if (this->packet_tool_->recv_packet(packet))
                 {
+                    this->time_recv = rclcpp::Clock().now();
+
                     //----接收包编号----//
                     /*recv_tid【1-4】:包编号位 0x00000000-0xffffffff*/
                     packet.unload_data(recv_tid, 1);
@@ -329,17 +338,17 @@ namespace rm_base
                     {
                         if(this->debug)
                             RCLCPP_INFO(node_->get_logger(), "[Gimbel Angel Position] RECV-package");
-                        uint32_t stm_tid = 0;
+                        // uint32_t stm_tid = 0;
                         float yaw = 0.0, pitch = 0.0, roll = 0.0;
                         float time_stamp = 0.0;
                         rm_interfaces::msg::GyroAttitude Gyro_msg;
-                        packet.unload_data(stm_tid, 6);
-                        packet.unload_data(yaw, 10);
-                        packet.unload_data(pitch, 14);
-                        packet.unload_data(roll, 18);
-                        packet.unload_data(time_stamp, 22);
+                        // packet.unload_data(stm_tid, 6);
+                        packet.unload_data(yaw, 6);
+                        packet.unload_data(pitch, 10);
+                        packet.unload_data(roll, 14);
+                        packet.unload_data(time_stamp, 18);
 
-                        Gyro_msg.tid = stm_tid;
+                        Gyro_msg.tid = recv_tid;
                         Gyro_msg.yaw = yaw;
                         Gyro_msg.pitch = pitch;
                         Gyro_msg.roll = roll;
@@ -359,7 +368,15 @@ namespace rm_base
                             RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
                         }
                     }
+                
+                    double time1, time2, time3;
+                    time1 = this->time_recv.seconds();
+                    time2 = rclcpp::Clock().now().seconds();
+                    time3 = this->time_send.seconds();
+                    RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
+                    RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
                 }
+
                 // else
                 // {
                 //     RCLCPP_INFO(node_->get_logger(), "Serial Recv Fial!!!");
