@@ -100,6 +100,8 @@ target_link_libraries(daheng_cam ${PROJECT_NAME})
 
 # register component nodes
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::VirtualCamNode")
+rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::MindVisionCamNode")
+rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::DaHengCamNode")
 
 # install inlude directories
 install(
