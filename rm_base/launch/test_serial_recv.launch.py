@@ -1,3 +1,4 @@
+from os import name
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
@@ -10,9 +11,11 @@ def generate_launch_description():
             name = 'recv',
             output = 'screen',
             parameters=[
-                {"serial_name": "/dev/pts/10"},
+                {"serial_name": "/dev/ttyUSB1"},   #ttyUSB0
                 {"serial_send": False},
-                {"serial_recv": True}
+                {"serial_recv": True},
+                {"serial_bps": 115200},
+                {"debug": True}
             ]
         )
     ])

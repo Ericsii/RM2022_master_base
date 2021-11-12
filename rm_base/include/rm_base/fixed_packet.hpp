@@ -7,8 +7,12 @@
 
 namespace rm_base
 {
-    //定长数据包封装： 16/32/64字节 [head_byte(0xff) , data_bytes , check_byte , tail_byte(0x0d)]
-    template <int capacity = 16>
+    /**
+     * @brief 定长数据包封装： 16/32/64字节 [head_byte(0xff) , data_bytes , check_byte , tail_byte(0x0d)]
+     * 
+     * @tparam capacity 
+     */
+    template <int capacity = 32>
     class FixedPacket
     {
     public:
@@ -20,41 +24,69 @@ namespace rm_base
             buffer_[capacity - 1] = 0x0d; //帧尾
         }
 
-        // 清除缓存，将data_bytes、check_byte都用0填充
+        /**
+         * @brief 清除缓存，将data_bytes、check_byte都用0填充
+         * 
+         */
         void clear() { memset(buffer_ + 1, 0, capacity - 2); }
-        // 设置check_byte
+ 
+        /**
+         * @brief 设置校验位check_byte：倒数第二位（capacity-2）
+         * 
+         */
         void set_check_byte() {
             uint8_t code = 0x00;
             for (int i=1; i<capacity-2; i++)
                 code ^= buffer_[i];
             buffer_[capacity - 2] = code; 
         }
-        // 将数据传入buffer_中
+
+        /**
+         * @brief 将数据传入buffer_中
+         * 
+         * @param src 
+         */
         void copy_from(const void *src) { memcpy(buffer_, src, capacity); }
-        // 获取buffer_
+
+        /**
+         * @brief 获取buffer_
+         * 
+         * @return const uint8_t* 
+         */
         const uint8_t *buffer() const { return buffer_; }
 
-        // 装载数据，将data数据传入buffer中的data_types
+        /**
+         * @brief 装载数据，将data数据传入buffer中的data_types
+         * 
+         * @tparam T 
+         * @tparam data_len 
+         * @param data 
+         * @param index 
+         * @return true 
+         * @return false 
+         */
         template <typename T, int data_len = sizeof(T)>
         bool load_data(T const &data, int index)
         {
-            // std::cout << index << " : " << +data ;
-            // std::cout << "\n";
-            
             //越界检测，data_types--buffer_(1,capacity-2)
             if (index > 0 && ((index + data_len) < (capacity - 2)))
             {
                 memcpy(buffer_ + index, &data, data_len);
-                // std::cout << data_len << ":";
-                // for (int i = 0; i < int(sizeof(T)); i++){
-                //     std::cout << +buffer_[index+i]<< " ";
-                // }
-                // std::cout << "\n";
                 return true;
             }
             return false;
         }
-        // 解析数据，将buffer中的data_types取出到data
+
+        /**
+         * @brief 解析数据，将buffer中的data_types取出到data
+         * 
+         * @tparam T 
+         * @tparam data_len 
+         * @param data 
+         * @param index 
+         * @return true 
+         * @return false 
+         */
         template <typename T, int data_len = sizeof(T)>
         bool unload_data(T &data, int index)
         {

@@ -20,10 +20,15 @@ find_package(rosidl_default_generators REQUIRED)
 set(msg_files
   "msg/Gimbal.msg"
   "msg/GimbalCmd.msg"
+  "msg/GyroAttitude.msg"
 )
 
 set(srv_files
   "srv/GetCameraInfo.srv"
+  "srv/SetMode.srv"
+  "srv/GetMode.srv"
+  "srv/GetColor.srv"
+  "srv/GetShootSpeed.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

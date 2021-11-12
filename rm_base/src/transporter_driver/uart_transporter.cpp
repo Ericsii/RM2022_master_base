@@ -10,6 +10,7 @@
 #include <termios.h> /*PPSIX 终端控制定义*/
 #include <errno.h>   /*错误号定义*/
 
+
 namespace rm_base
 {
     //设置串口参数
@@ -22,7 +23,7 @@ namespace rm_base
         //将fd串口对象的参数保存与options中，调用成功则返回0
         if (tcgetattr(fd_, &options) != 0)
         {
-            perror("Setup serial err!!!");
+            RCLCPP_ERROR(this->node_->get_logger(),"Setup serial err!!!");
             return false;
         }
 
@@ -71,7 +72,7 @@ namespace rm_base
             options.c_cflag |= CS8;
             break;
         default:
-            fprintf(stderr, "Unsupported data size!!!\n");
+            RCLCPP_ERROR(this->node_->get_logger(), "Unsupported data size!!!");
         }
 
         //设置校验位
@@ -99,7 +100,7 @@ namespace rm_base
             options.c_cflag &= ~CSTOPB;
             break;
         default:
-            fprintf(stderr, "Unsupported parity\n");
+            RCLCPP_ERROR(this->node_->get_logger(), "Unsupported parity");
         }
 
         // 设置停止位
@@ -112,7 +113,7 @@ namespace rm_base
             options.c_cflag |= CSTOPB;
             break;
         default:
-            fprintf(stderr, "Unsupported stop bits\n");
+            RCLCPP_ERROR(this->node_->get_logger(), "Unsupported stop bits");
         }
 
         // 修改输出模式，原始数据输出
@@ -135,7 +136,7 @@ namespace rm_base
         {
             //tcsetattr用于设置终端的相关参数, 如果返回为-1或是出现EINTR错误，则表示参数设置错误
             //TCSANOW：不等数据传输完毕就立即改变属性。
-            perror("com set error!\n");
+            RCLCPP_ERROR(this->node_->get_logger(),"com set error!");
         }
         return true;
     }
@@ -147,31 +148,31 @@ namespace rm_base
         {
             return true;
         }
-        fd_ = ::open(device_path_.c_str(), O_RDWR | O_NOCTTY | O_NDELAY); //打开设备
+        fd_ = ::open(device_path_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK); //打开设备
         if (fd_ == -1)
         {
-            printf("cannot open uart device: %s\n", device_path_.c_str());
+            RCLCPP_ERROR(this->node_->get_logger(),"cannot open uart device: %s", device_path_.c_str());
             return false;
         } else{
-            printf("Open uart device: %s\n", device_path_.c_str());
+            RCLCPP_INFO(this->node_->get_logger(),"Open uart device: %s", device_path_.c_str());
         }
-
+        
         // 串口设置为阻塞状态
         if (fcntl(fd_, F_SETFL, 0) < 0)
         {
-            printf("fcntl failed!\n");
+            RCLCPP_ERROR(this->node_->get_logger(),"fcntl failed!");
             return false;
         }
         // 测试是否为终端设备
-        if (0 == isatty(STDIN_FILENO))
-        {
-            printf("standard input is not a end device\n");
-            return false;
-        }
+        // if (0 == isatty(STDIN_FILENO))
+        // {
+        //     RCLCPP_ERROR(this->node_->get_logger(),"standard input is not a end device");
+        //     return false;
+        // }
         // 设置串口数据帧格式
         if (set_param(speed_, flow_ctrl_, databits_, stopbits_, parity_))
         {
-            printf("set param\n");
+            RCLCPP_INFO(this->node_->get_logger(),"set param: speed:%d",speed_);
             return false;
         }
         is_open_ = true;

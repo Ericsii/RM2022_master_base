@@ -2,9 +2,9 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>rm_base</name>
-  <version>0.0.1</version>
+  <version>0.0.0</version>
   <description>
-  Basic transporter pacakge for SCURM_ROS.
+    Communication package for SCRM_ROS. Provide serial interface for PC and STM.
   </description>
   <maintainer email="1063760288@qq.com">Tom Wen</maintainer>
   <license>GNU General Public License v3.0</license>
