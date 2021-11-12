@@ -38,17 +38,15 @@ namespace rm_cam
         }
 
     private:
-        rclcpp::Node::SharedPtr node_;
-
+        int current_mode_;
         std::string path_; // 路径(image/video)
+        rclcpp::Node::SharedPtr node_;
         cv::Mat img_;      // only for IMAGE_MODE
-
         cv::VideoCapture cap_; // only for VIDEO_MODE
         int total_frames_;
         int current_frame_;
 
         bool is_open_;
-        int current_mode_;
     };
 } // namespace rm_cam
 
