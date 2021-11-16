@@ -13,11 +13,12 @@ int main(int argc, char **argv)
   std::shared_ptr<rclcpp::Node> node_ = rclcpp::Node::make_shared("get_mode_client");
 
   rclcpp::Client<rm_interfaces::srv::GetMode>::SharedPtr get_mode_cli_ = 
-    node_->create_client<rm_interfaces::srv::GetMode>("get_mode");
+    node_->create_client<rm_interfaces::srv::GetMode>("/recv/get_mode");
 
   auto get_mode_rqt_ = std::shared_ptr<rm_interfaces::srv::GetMode::Request>();
   // get_mode_rqt_->node_type = "nashor";
-  get_mode_rqt_->node_type = atoll(argv[1]);
+  // get_mode_rqt_->node_type = atoll(argv[1]);
+  get_mode_rqt_->node_type = argv[1];
 
   while (!get_mode_cli_->wait_for_service(1s))
   {
@@ -38,8 +39,8 @@ int main(int argc, char **argv)
       RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service get_mode");
   }
 
-  rclcpp::spin(node_);
   rclcpp::shutdown();
+  return 0;
 }
 
 

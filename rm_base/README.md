@@ -38,8 +38,7 @@
 |pitch|目标pitch|float32(5-8)|
 |shoot|是否射击|int32(21-24)|
 
-
-## 2.下位机->上位机
+### **下位机->上位机** 
 
 ### ··包种类cmd位（位于帧的[5]位）
 设置判断位，判断数据包的作用
@@ -49,22 +48,26 @@
 |ChangeShootSpeed|射速帧|0xb1|
 |ChangeColor|颜色帧|0xc1|
 |GimbalAngleControl|姿态帧|0xd1|
-### 模式帧
+- 1.模式帧
+
 |数据|说明|
 |-|-|
 |cmd|0xa1|
 |mode|战斗模式（自瞄 : 0xaa、 小符: 0xbb、 大符： 0xcc、手动: other）|
-### 射速帧
+- 2.射速帧
+
 |数据|说明|
 |-|-|
 |cmd|0xb1|
 |velocity|子弹发射速度|
-### （我方）颜色帧
+- 3.（我方）颜色帧
+
 |数据|说明|
 |-|-|
 |cmd|0xc1|
 |color|我方颜色（red : 0x11/ blue : 0xbb）|
-### 姿态帧
+- 4.姿态帧
+
 |数据|说明|
 |-|-|
 |cmd|0xd1|
@@ -82,9 +85,10 @@ echo 'source /opt/ros/galactic/setup.bash' >> ~/.bashrc
 
 mkdir -p ~/rm_ros/scu_rm_ros
 cd ~/rm_ros/scu_rm_ros
-  1--git clone git@e.coding.net:scurm/2022-vision/master-base.gi
-  2--或者直接解压master-base包
-  3--将文件夹直接改名为src
+
+  1--git clone git@e.coding.net:scurm/2022-vision/master-base.git 
+  或者直接解压master-base.zip包
+  2--将文件夹直接改名为src
 
 cd ~/rm_ros/scu_rm_ros 
 colcon build
@@ -113,7 +117,8 @@ serial_name：使用的串口名，serial_send：串口发送，serial_recv：�
 # 测试
 结点启动终端：
 ```
-ros2 launch launch/serial_test_launch.py
+ros2 launch rm_base test_serial_recv.py
+ros2 launch rm_base test_serial_send.py
 ```
 （另起一个终端）测试终端，模拟自瞄结点广播topic：
 ```
@@ -169,3 +174,10 @@ bps = 115200
 [simple_robot_base-1] [INFO] [1636283057.887884238] [send]: packet[2692] Send 
 [simple_robot_base-1] [INFO] [1636283057.887949062] [send]: SEND-ID: '2692'
 ```
+
+
+## 11/14 与电控联调
+上位机发-->下位机解、发-->上位机解，
+**115200** 波特率延迟只能到达 **6 ms** 左右， **1152000** 波特率延迟只能到达 **4 ms** 左右，
+上位机发-->串口杜邦线直连-->上位机解，
+**1152000** 波特率延迟能达到 **600-700 us** 左右

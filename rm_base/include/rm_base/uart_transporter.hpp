@@ -13,7 +13,7 @@ namespace rm_base
     public:
         UartTransporter(
             const std::string &device_path = "/dev/ttyACM1",
-            int speed = 115200,
+            int speed = 1152000,
             rclcpp::Node::SharedPtr node = nullptr,
             int flow_ctrl = 0,
             int databits = 8,
