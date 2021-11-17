@@ -10,10 +10,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# options
-option(WITH_MVSDK "Build with MindVisionSDK" ON)
-option(WITH_GXISDK "Build with DaHengGxiSDK" ON)
-
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -23,37 +19,11 @@ find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(rm_interfaces REQUIRED)
 
-# MVSDK
-if(WITH_MVSDK)
-    include_directories("dependencies/MVSDK/include")
-    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-        link_directories("dependencies/MVSDK/lib/x64")
-    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
-        link_directories("dependencies/MVSDK/lib/arm64")
-    else()
-        message(FATAL_ERROR "Unkown host system processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
-    endif()
-endif()
-
-# DaHengGxiSDK
-if(WITH_GXISDK)
-    include_directories("dependencies/DaHengGxiSDK/include")
-    if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-        link_directories("dependencies/DaHengGxiSDK/lib/x86_64")
-    elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
-        link_directories("dependencies/DaHengGxiSDK/lib/arm64")
-    else()
-        message(FATAL_ERROR "Unkown host system processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
-    endif()
-endif()
-
 # Include
 include_directories(include)
 
 set(cam_drivers
     "src/cam_driver/virtual_cam.cpp"
-    "src/cam_driver/mindvision_cam.cpp"
-    "src/cam_driver/daheng_cam.cpp"
 )
 
 # 创建shared lib
@@ -62,17 +32,7 @@ add_library(${PROJECT_NAME} SHARED
     "src/cam_server.cpp"
     "src/cam_client.cpp"
     "src/virtual_cam_node.cpp"
-    "src/mindvision_cam_node.cpp"
-    "src/daheng_cam_node.cpp"
 )
-
-if(WITH_MVSDK)
-    target_link_libraries(${PROJECT_NAME} MVSDK pthread)
-endif()
-
-if(WITH_GXISDK)
-    target_link_libraries(${PROJECT_NAME} gxiapi pthread)
-endif()
 
 # 设置依赖
 set(dependencies
@@ -91,17 +51,9 @@ ament_export_dependencies(${dependencies})
 # VirtualCamera可执行入口
 add_executable(virtual_cam "src/virtual_cam_node_main.cpp")
 target_link_libraries(virtual_cam ${PROJECT_NAME})
-# MindVisionCamera可执行入口
-add_executable(mindvision_cam "src/mindvision_cam_node_main.cpp")
-target_link_libraries(mindvision_cam ${PROJECT_NAME})
-# DahengCamera可执行入口
-add_executable(daheng_cam "src/daheng_cam_node_main.cpp")
-target_link_libraries(daheng_cam ${PROJECT_NAME})
 
 # register component nodes
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::VirtualCamNode")
-rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::MindVisionCamNode")
-rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::DaHengCamNode")
 
 # install inlude directories
 install(
@@ -121,7 +73,7 @@ install(
 
 # install executable entry
 install(
-    TARGETS virtual_cam mindvision_cam daheng_cam
+    TARGETS virtual_cam
     DESTINATION lib/${PROJECT_NAME}
 )
 

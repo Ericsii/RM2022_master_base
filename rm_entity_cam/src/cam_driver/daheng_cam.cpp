@@ -5,7 +5,7 @@
  * @LastEditTime: 2021-11-10 17:47:10
  * @Description: file content
  */
-#include "rm_cam/daheng_cam.hpp"
+#include "rm_entity_cam/daheng_cam.hpp"
 
 #include <iostream>
 #include <fstream>

@@ -7,7 +7,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rm_cam/cam_server.hpp"
-#include "rm_cam/mindvision_cam.hpp"
+#include "rm_entity_cam/mindvision_cam.hpp"
 
 namespace rm_cam
 {
