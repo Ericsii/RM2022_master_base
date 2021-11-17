@@ -25,6 +25,7 @@ namespace rm_base
     SimpleRobotBaseNode::SimpleRobotBaseNode(const rclcpp::NodeOptions &options)
     {
         node_ = std::make_shared<rclcpp::Node>("simple_robot_base", options);
+        this->node_name = node_->get_name();
 
         /*----------------------- Param ros参数 -----------------------*/
         //param参数：serial_name【串口名】
@@ -32,7 +33,7 @@ namespace rm_base
         node_->get_parameter("serial_name",this->serial_name);
 
          //param参数：serial_bps【串口波特率】
-        node_->declare_parameter("serial_bps", 115200);
+        node_->declare_parameter("serial_bps", 1152000);
         node_->get_parameter("serial_bps", this->serial_bps);        
 
         //初始化串口、数据包
@@ -50,7 +51,7 @@ namespace rm_base
         auto custom_qos = node_->get_parameter("custom_qos").as_bool();
 
         //param参数：debug【DEBUG调试】
-        node_->declare_parameter("debug", true);
+        node_->declare_parameter("debug", false);
         this->debug = node_->get_parameter("debug").as_bool();
         
         /*----------------------- Topic ros话题 -----------------------*/
@@ -62,44 +63,44 @@ namespace rm_base
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                "cmd_gimbal",
+                this->node_name + "/cmd_gimbal",
                 cmd_gimbal_sub_qos_profile,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
             //topic发布：gyro_attitude, 陀螺仪姿态发布
             gyro_attitude_pub_ = node_->create_publisher<rm_interfaces::msg::GyroAttitude>(
-                "gyro_attitude",
+                this->node_name + "/gyro_attitude",
                 gyro_attitude_pub_qos_profile);
         }
         else
         {
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                "cmd_gimbal",
+                this->node_name + "/cmd_gimbal",
                 10,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
             gyro_attitude_pub_ = node_->create_publisher<rm_interfaces::msg::GyroAttitude>(
-                "gyro_attitude",
+                this->node_name + "/gyro_attitude",
                 10);
         }  
 
         /*----------------------- Service ros服务 -----------------------*/
         //service服务端：获取模式
         get_mode_srv_ = node_->create_service<rm_interfaces::srv::GetMode>(
-            "get_mode", 
+            this->node_name + "/get_mode", 
             // &SimpleRobotBaseNode::ModeGet);
             std::bind(&SimpleRobotBaseNode::ModeGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
         //service服务端：获取颜色
         get_color_srv_ = node_->create_service<rm_interfaces::srv::GetColor>(
-            "get_color",
+            this->node_name + "/get_color",
             std::bind(&SimpleRobotBaseNode::ColorGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
         //service服务端：获取射速
         get_shoot_speed_srv_ = node_->create_service<rm_interfaces::srv::GetShootSpeed>(
-            "get_shoot_speed",
+            this->node_name + "/get_shoot_speed",
             std::bind(&SimpleRobotBaseNode::ShootSpeedGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
@@ -127,31 +128,34 @@ namespace rm_base
         if(this->SerialSend)
         {
             this->tid++;
+            this->time_send = rclcpp::Clock().now();
             //----第一次发送----//
             if (this->debug)
             {
                 if (this->tid == 1)
                     RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Send Init ", this->serial_name.c_str(), this->serial_bps);
                 else
-                    RCLCPP_INFO(node_->get_logger(), "packet[%d] Send ", this->tid);
+                    RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
             }
 
             //----将数据导入数据包中----//
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            packet.load_data<float>(msg->position.yaw, 5);
-            packet.load_data<float>(msg->position.pitch, 9);
+            // packet.load_data<float>(msg->position.yaw, 5);
+            // packet.load_data<float>(msg->position.pitch, 9);
 
             /** RMUA
-            packet.load_data<float>(msg->velocity.yaw, 9);
-            packet.load_data<float>(msg->velocity.pitch, 9);
-            packet.load_data<float>(0x00, 9);
+            packet.load_data<float>(msg->velocity.yaw, 13);
+            packet.load_data<float>(msg->velocity.pitch, 17);
+            packet.load_data<int>(shoot, 21);
             **/
 
             if(this->debug)
             {
-                // packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-                // packet.load_data<unsigned char>(0xaa, 6);
+                packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
+                packet.load_data<unsigned char>(0xbb, 6);
+                packet.load_data<unsigned char>(0x0d, 7);
+                packet.load_data<unsigned char>(0xff, 8);
 
                 // packet.load_data<unsigned char>(frame_type::ChangeShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
@@ -160,11 +164,11 @@ namespace rm_base
                 // packet.load_data<unsigned char>(0xbb, 6);
 
                 // packet.load_data<unsigned char>(frame_type::GimbalAngleControl, 5);
-                // packet.load_data<uint32_t>(this->tid, 6);
-                // packet.load_data<float>(1.0, 10);
-                // packet.load_data<float>(2.0, 14);
-                // packet.load_data<float>(3.0, 18);
-                // packet.load_data<float>(4913.656, 22);
+                // packet.load_data<float>(1.0, 6);
+                // packet.load_data<float>(2.0, 10);
+                // packet.load_data<float>(3.0, 14);
+                // // packet.load_data<float>(4913.656, 18);
+                packet.load_data<double>(this->time_send.seconds(), 18);
 
                 // uint8_t bcc = 0x11;
                 uint32_t id = 0;
@@ -175,14 +179,26 @@ namespace rm_base
                 // RCLCPP_INFO(node_->get_logger(), "SEND-YAW packet: '%f'", Syaw);
                 if(packet.unload_data(id, 1))
                     RCLCPP_INFO(node_->get_logger(), "SEND-ID: '%d'",  id);
+                double timex;
+                packet.unload_data<double>(timex, 18);
+                RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
                 // if(packet.unload_data(bcc, 30))
                 //     RCLCPP_INFO(node_->get_logger(), "SEND-BCC: '%x'",  bcc);
             }      
 
             packet.set_check_byte();        //设置校验位字节（check_byte）为BCC校验码
             bool send_ack = this->packet_tool_->send_packet(packet);
-            if (!send_ack)
-                RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!");            
+
+            if (this->debug)
+            {
+                if (!send_ack)
+                    RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!"); 
+                double time1, time2;
+                time1 = this->time_send.seconds();
+                time2 = rclcpp::Clock().now().seconds();
+                RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
+                RCLCPP_INFO(node_->get_logger(),"start[%d]: %f",this->tid,time2); 
+            }
             
             //设定数据发送延迟
             // std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -253,9 +269,17 @@ namespace rm_base
                     //----接收包编号----//
                     /*recv_tid【1-4】:包编号位 0x00000000-0xffffffff*/
                     packet.unload_data(recv_tid, 1);
-                    if(this->debug)
-                        RCLCPP_INFO(node_->get_logger(), "RECV packet [%d]", recv_tid);
+                    if(recv_tid <= this->last_tid)
+                        continue;
 
+                    if(this->debug)
+                    {
+                        this->time_recv = rclcpp::Clock().now();
+                        RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
+                        double timer = rclcpp::Clock().now().seconds();
+                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer); 
+                    }
+                        
                     //------接收包种类------//
                     /*cmd【5】:帧种类位 0xa1云台控制 0xb1射速改变 0xc1模式改变*/
                     unsigned char cmd;             
@@ -270,9 +294,11 @@ namespace rm_base
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Mode Change] RECV-package");
+                        {
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
                             RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode); 
-
+                        }
+                            
                         // if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
                         //     this->SerialSend = true;    //开启发送部分，开始向下位机发送数据     
                         // else
@@ -296,7 +322,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::ChangeShootSpeed)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Shoot-speed Get] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
                         int shoot_speed = 0;
                         packet.unload_data(shoot_speed, 6);
                         if(shoot_speed > 0)
@@ -308,7 +334,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::ChangeColor)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Color Get] RECV-package");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Color Get]");
                         unsigned char color = 0x00;
                         packet.unload_data(color, 6);
                         if(color == 0xbb)
@@ -328,18 +354,18 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::GimbalAngleControl)
                     {
                         if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "[Gimbel Angel Position] RECV-package");
-                        uint32_t stm_tid = 0;
-                        float yaw = 0.0, pitch = 0.0, roll = 0.0;
-                        float time_stamp = 0.0;
-                        rm_interfaces::msg::GyroAttitude Gyro_msg;
-                        packet.unload_data(stm_tid, 6);
-                        packet.unload_data(yaw, 10);
-                        packet.unload_data(pitch, 14);
-                        packet.unload_data(roll, 18);
-                        packet.unload_data(time_stamp, 22);
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Gimbel Angel Position]");
 
-                        Gyro_msg.tid = stm_tid;
+                        float yaw = 0.0, pitch = 0.0, roll = 0.0;
+                        double time_stamp = 0.0;
+                        rm_interfaces::msg::GyroAttitude Gyro_msg;
+
+                        packet.unload_data(yaw, 6);
+                        packet.unload_data(pitch, 10);
+                        packet.unload_data(roll, 14);
+                        packet.unload_data(time_stamp, 18);
+
+                        Gyro_msg.tid = recv_tid;
                         Gyro_msg.yaw = yaw;
                         Gyro_msg.pitch = pitch;
                         Gyro_msg.roll = roll;
@@ -348,10 +374,6 @@ namespace rm_base
 
                         if(this->debug)
                         {
-                            // float Rpitch, Ryaw, Rroll;
-                            // packet.unload_data(Rpitch, 3);
-                            // packet.unload_data(Ryaw, 7);
-                            // packet.unload_data(Rroll, 11);
                             RCLCPP_INFO(node_->get_logger(), "RECV-TID: '%d'", Gyro_msg.tid);
                             RCLCPP_INFO(node_->get_logger(), "RECV-PITCH: '%f'", Gyro_msg.yaw);
                             RCLCPP_INFO(node_->get_logger(), "RECV-YAW: '%f'", Gyro_msg.pitch);
@@ -359,6 +381,21 @@ namespace rm_base
                             RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
                         }
                     }
+                    if (this->debug)
+                    {
+                        double time1, time2, time3;
+                        time1 = this->time_recv.seconds();
+                        time2 = rclcpp::Clock().now().seconds();
+                        // time3 = this->time_send.seconds();
+                        // if (recv_tid == this->tid)
+                        packet.unload_data<double>(time3, 18);
+                        RCLCPP_INFO(node_->get_logger(),"\nsend-time %f, \nrecv-time %f",time3, time2);
+                        RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
+ 
+                        // time3 = this->time_send.seconds();
+                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
+                    }
+                    this->last_tid = recv_tid;
                 }
                 // else
                 // {
