@@ -355,34 +355,30 @@ namespace rm_base
                     {
                         if(this->debug)
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Gimbel Angel Position]");
-                        // uint32_t stm_tid = 0;
+
                         float yaw = 0.0, pitch = 0.0, roll = 0.0;
-                        float time_stamp = 0.0;
+                        double time_stamp = 0.0;
                         rm_interfaces::msg::GyroAttitude Gyro_msg;
-                        // packet.unload_data(stm_tid, 6);
+
                         packet.unload_data(yaw, 6);
                         packet.unload_data(pitch, 10);
                         packet.unload_data(roll, 14);
-                        // packet.unload_data(time_stamp, 18);
+                        packet.unload_data(time_stamp, 18);
 
                         Gyro_msg.tid = recv_tid;
                         Gyro_msg.yaw = yaw;
                         Gyro_msg.pitch = pitch;
                         Gyro_msg.roll = roll;
-                        // Gyro_msg.time_stamp = time_stamp;
+                        Gyro_msg.time_stamp = time_stamp;
                         gyro_attitude_pub_->publish(Gyro_msg);
 
                         if(this->debug)
                         {
-                            // float Rpitch, Ryaw, Rroll;
-                            // packet.unload_data(Rpitch, 3);
-                            // packet.unload_data(Ryaw, 7);
-                            // packet.unload_data(Rroll, 11);
                             RCLCPP_INFO(node_->get_logger(), "RECV-TID: '%d'", Gyro_msg.tid);
                             RCLCPP_INFO(node_->get_logger(), "RECV-PITCH: '%f'", Gyro_msg.yaw);
                             RCLCPP_INFO(node_->get_logger(), "RECV-YAW: '%f'", Gyro_msg.pitch);
                             RCLCPP_INFO(node_->get_logger(), "RECV-ROLL:'%f'", Gyro_msg.roll);
-                            // RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
+                            RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
                         }
                     }
                     if (this->debug)
@@ -399,15 +395,6 @@ namespace rm_base
                         // time3 = this->time_send.seconds();
                         RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
                     }
-
-                    //
-                    double time1, time2, time3;
-                    time1 = this->time_recv.seconds();
-                    time2 = rclcpp::Clock().now().seconds();
-                    packet.unload_data<double>(time3, 18);
-                    RCLCPP_INFO(node_->get_logger(),"\nsend-time %f, \nrecv-time %f",time3, time2);
-                    RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
-
                     this->last_tid = recv_tid;
                 }
                 // else
