@@ -10,6 +10,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+if(not ${CMAKE_BUILD_TYPE})
+  set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+ add_definitions("-DDEBUG_MODE")
+endif()
+
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -24,7 +33,6 @@ include_directories(include)
 add_library(${PROJECT_NAME} SHARED
   src/transporter_driver/uart_transporter.cpp
   src/simple_robot_base_node.cpp
-  src/TEST_mode_get_client.cpp
 )
 
 #  src/TEST_mode_get_client.cpp
@@ -46,13 +54,13 @@ ament_export_dependencies(${dependencies})
 add_executable(simple_robot_base src/simple_robot_base_main.cpp)
 target_link_libraries(simple_robot_base ${PROJECT_NAME})
 
-# server test入口
-add_executable(get_mode_client src/TEST_mode_get_client.cpp)
-target_link_libraries(get_mode_client ${PROJECT_NAME})
+# #server test入口
+# add_executable(get_mode_client src/TEST_mode_get_client.cpp)
+# target_link_libraries(get_mode_client ${PROJECT_NAME})
 
-# subscriber test入口
-#add_executable(subscriber src/TEST_subscribtion_node.cpp)
-#target_link_libraries(subscriber ${PROJECT_NAME})
+# #subscriber test入口
+# add_executable(subscriber src/TEST_subscribtion_node.cpp)
+# target_link_libraries(subscriber ${PROJECT_NAME})
 
 install(
   DIRECTORY include/
@@ -69,14 +77,13 @@ install(TARGETS simple_robot_base
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# test server/subscriber
-install(TARGETS get_mode_client
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-#install(TARGETS subscriber
+# #test server/subscriber
+# install(TARGETS get_mode_client
+#   DESTINATION lib/${PROJECT_NAME}
+# )
+# install(TARGETS subscriber
 #  DESTINATION lib/${PROJECT_NAME}
-#)
+# )
 
 install(
   DIRECTORY launch

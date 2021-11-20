@@ -13,34 +13,34 @@
 |-|-|-|-|
 |[0]|[1-29]|[30]|[31]|
 |包头|数据位|校验位|包尾|
-|0xff|根据|暂为bcc异或校验|0x0d|
+|0xff|见下文详细说明|暂为bcc异或校验|0x0d|
 
 ## 通信协议
 ### **上位机->下位机** 
 
--  1.云台控制帧
+-  1.步兵、英雄云台控制帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
-|tid|上位机帧编号|int32(1-4)|
-|yaw|目标yaw|float32(5-8)|
-|pitch|目标pitch|float32(9-12)|
-|【UA】yaw_v|yaw角速度|float32(13-16)|
-|【UA】pitch_v|pitch角速度|float32(17-20)|
-|【UA】shoot|是否射击|int32(21-24)|
+|tid|上位机帧编号|int32【1-4】|
+|yaw|目标yaw|float32【5-8】|
+|pitch|目标pitch|float32【9-12】|
+|【UA】yaw_v|yaw角速度|float32【13-16】|
+|【UA】pitch_v|pitch角速度|float32【17-20】|
+|【UA】shoot|是否射击|int32【21-24】|
 - 2.哨兵帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
-|tid|上位机帧编号|int32(1-4)|
-|cmd|哨兵状态（自瞄、巡逻）|unsigned char(5)|
-|yaw|目标yaw|float32(5-8)|
-|pitch|目标pitch|float32(5-8)|
-|shoot|是否射击|int32(21-24)|
+|tid|上位机帧编号|int32【1-4】|
+|cmd|哨兵状态（自瞄、巡逻）|unsigned char【5】|
+|yaw|目标yaw|float32【6-9】|
+|pitch|目标pitch|float32【10-13】|
+|shoot|是否射击|int32【21-24】|
 
 ### **下位机->上位机** 
 
-### ··包种类cmd位（位于帧的[5]位）
+#### 包种类cmd位（位于帧的[5]位）
 设置判断位，判断数据包的作用
 |变量名|帧种类|数据|
 |-|-|-|
@@ -50,32 +50,33 @@
 |GimbalAngleControl|姿态帧|0xd1|
 - 1.模式帧
 
-|数据|说明|
-|-|-|
-|cmd|0xa1|
-|mode|战斗模式（自瞄 : 0xaa、 小符: 0xbb、 大符： 0xcc、手动: other）|
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】4294967295-10|
+|cmd|0xa1|unsigned char【5】|
+|mode|战斗模式|unsigned char【6】:（自瞄 : 0xaa、 小符: 0xbb、 大符： 0xcc、手动: 0xee）|
 - 2.射速帧
 
-|数据|说明|
-|-|-|
-|cmd|0xb1|
-|velocity|子弹发射速度|
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】4294967295-9|
+|cmd|0xb1|unsigned char【5】|
+|velocity|子弹发射速度|int32【6-9】|
 - 3.（我方）颜色帧
 
-|数据|说明|
-|-|-|
-|cmd|0xc1|
-|color|我方颜色（red : 0x11/ blue : 0xbb）|
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】4294967295-8|
+|cmd|0xc1|unsigned char【5】|
+|color|我方颜色|unsigned char【6】:（red : 0x1c/ blue : 0xbc）|
 - 4.姿态帧
 
-|数据|说明|
-|-|-|
-|cmd|0xd1|
-|tid|下位机帧编号|
-|yaw|当前姿态yaw|
-|pitch|当前姿态pitch|
-|roll|当前姿态roll|
-|time_stamp|时间戳|
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】0~(4294967295-10)|
+|cmd|0xd1|unsigned char【5】|
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【6-9】Q2【10-13】Q3【14-17】Q4【18-21】|
+|time_stamp|时间戳|float64/double【22-29】|
 
 ## 环境搭建
 ### 1.安装ROS2（https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html） ，安装desktop版本
@@ -137,6 +138,8 @@ ros2 run rm_base simple_robot_base --ros-args --remap __node:=recv
 ## 权限（每次串口插拔或者是ubuntu系统休眠都需要重新给权限）
 sudo chmod +777 /dev/tty
 
+
+
 # 开发日志
 
 ## （已解决）11/2 调试32位packet发送接收时产生bug， 发送部分将16次的packet一次发送，导致接收只能接收到16个包中的一个
@@ -181,3 +184,8 @@ bps = 115200
 **115200** 波特率延迟只能到达 **6 ms** 左右， **1152000** 波特率延迟只能到达 **4 ms** 左右，
 上位机发-->串口杜邦线直连-->上位机解，
 **1152000** 波特率延迟能达到 **600-700 us** 左右
+
+## 11/18 联调
+上位机发-->下位机解、发-->上位机解，
+ **1152000** 波特率延迟能到达 **1 ms** 左右
+ 不稳定，在800us-2000us波动（一次发收400-1000us）较为合理，但表明有丢包现象
