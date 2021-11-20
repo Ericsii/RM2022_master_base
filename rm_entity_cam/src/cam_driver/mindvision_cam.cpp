@@ -1,4 +1,4 @@
-#include "rm_cam/mindvision_cam.hpp"
+#include "rm_entity_cam/mindvision_cam.hpp"
 
 #include <iostream>
 

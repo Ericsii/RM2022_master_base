@@ -13,7 +13,7 @@ namespace rm_base
     public:
         UartTransporter(
             const std::string &device_path = "/dev/ttyACM1",
-            int speed = 115200,
+            int speed = 1152000,
             rclcpp::Node::SharedPtr node = nullptr,
             int flow_ctrl = 0,
             int databits = 8,
@@ -81,13 +81,13 @@ namespace rm_base
         //设备参数
         std::string device_path_; //设备名
         int speed_;               //波特率
+        rclcpp::Node::SharedPtr node_;
         int flow_ctrl_;           //数据流控制
         int databits_;            //数据位
         int stopbits_;            //停止位
         int parity_;              //校验位
         bool is_open_{false};     //设备状态
         int fd_{-1};              //文件描述符(0 in /1 out)
-        rclcpp::Node::SharedPtr node_;
     };
 }
 

@@ -8,7 +8,7 @@
 #include "rclcpp/rclcpp.hpp"
 
 #include "rm_cam/cam_server.hpp"
-#include "rm_cam/daheng_cam.hpp"
+#include "rm_entity_cam/daheng_cam.hpp"
 
 namespace rm_cam
 {

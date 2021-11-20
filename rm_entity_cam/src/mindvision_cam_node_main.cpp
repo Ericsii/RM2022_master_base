@@ -1,7 +1,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rm_cam/mindvision_cam_node.hpp"
+#include "rm_entity_cam/mindvision_cam_node.hpp"
 
 int main(int argc, char **argv)
 {

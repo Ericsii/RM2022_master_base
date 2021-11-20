@@ -3,4 +3,4 @@ int32 tid
 float32 yaw
 float32 pitch
 float32 roll
-float32 time_stamp
+float64 time_stamp

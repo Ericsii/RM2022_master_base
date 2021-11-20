@@ -16,8 +16,8 @@ namespace rm_base
     //设置串口参数
     bool UartTransporter::set_param(int speed, int flow_ctrl, int databits, int stopbits, int parity)
     {
-        int speed_arr[] = {B115200, B19200, B9600, B4800, B2400, B1200, B300};
-        int name_arr[] = {115200, 19200, 9600, 4800, 2400, 1200, 300};
+        int speed_arr[] = {B4000000, B1152000, B115200, B19200, B9600, B4800, B2400, B1200, B300};
+        int name_arr[] = {4000000, 1152000, 115200, 19200, 9600, 4800, 2400, 1200, 300};
         struct termios options;
 
         //将fd串口对象的参数保存与options中，调用成功则返回0
