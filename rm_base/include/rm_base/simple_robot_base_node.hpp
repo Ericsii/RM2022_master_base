@@ -8,6 +8,7 @@
 #include "rm_base/fixed_packet_tool.hpp"
 #include "rm_interfaces/msg/gimbal_cmd.hpp"
 #include "rm_interfaces/msg/gyro_attitude.hpp"
+#include "rm_interfaces/msg/gyro_quaternions.hpp"
 #include "rm_interfaces/srv/get_mode.hpp"
 #include "rm_interfaces/srv/get_color.hpp"
 #include "rm_interfaces/srv/get_shoot_speed.hpp"
@@ -66,7 +67,8 @@ namespace rm_base
          * @brief 【ROS2】订阅-subscription、发布-publisher、服务端-service
          */
         rclcpp::Subscription<rm_interfaces::msg::GimbalCmd>::SharedPtr cmd_gimbal_sub_;
-        rclcpp::Publisher<rm_interfaces::msg::GyroAttitude>::SharedPtr gyro_attitude_pub_;
+        // rclcpp::Publisher<rm_interfaces::msg::GyroAttitude>::SharedPtr gyro_attitude_pub_;
+        rclcpp::Publisher<rm_interfaces::msg::GyroQuaternions>::SharedPtr gyro_quaternions_pub_;
         rclcpp::Service<rm_interfaces::srv::GetMode>::SharedPtr get_mode_srv_;
         rclcpp::Service<rm_interfaces::srv::GetColor>::SharedPtr get_color_srv_;
         rclcpp::Service<rm_interfaces::srv::GetShootSpeed>::SharedPtr get_shoot_speed_srv_;
