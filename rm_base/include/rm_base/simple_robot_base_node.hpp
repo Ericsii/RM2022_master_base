@@ -98,6 +98,8 @@ namespace rm_base
         rclcpp::Time time_send;
         rclcpp::Time time_recv;
         std::string node_name;
+        double max_time = 0;
+        double min_time = 10000.0;
     };
 }
 

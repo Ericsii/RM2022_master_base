@@ -104,6 +104,7 @@ namespace rm_base
             std::bind(&SimpleRobotBaseNode::ShootSpeedGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
+#ifdef DEBUG_MODE
         if(this->debug)
             RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Init ", this->serial_name.c_str(), this->serial_bps);
             if(this->SerialRecv)
@@ -113,6 +114,7 @@ namespace rm_base
             if(custom_qos)
                 RCLCPP_INFO(node_->get_logger(), "Qos ON!");
             RCLCPP_INFO(node_->get_logger(), "Service Mode/Color/Shoot-Speed start!");
+#endif
 
         /*----------------------- Thread 线程 -----------------------*/
         //thread线程：串口数据接收
@@ -128,21 +130,15 @@ namespace rm_base
         if(this->SerialSend)
         {
             this->tid++;
-            this->time_send = rclcpp::Clock().now();
-            //----第一次发送----//
-            if (this->debug)
-            {
-                if (this->tid == 1)
-                    RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Send Init ", this->serial_name.c_str(), this->serial_bps);
-                else
-                    RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
-            }
-
             //----将数据导入数据包中----//
+            //----上位机->下位机----/
+            /* 1-4  tid 包编号
+             * 5-8  yaw 
+             * 9-12 pitch */
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            // packet.load_data<float>(msg->position.yaw, 5);
-            // packet.load_data<float>(msg->position.pitch, 9);
+            packet.load_data<float>(msg->position.yaw, 5);
+            packet.load_data<float>(msg->position.pitch, 9);
 
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);
@@ -150,12 +146,20 @@ namespace rm_base
             packet.load_data<int>(shoot, 21);
             **/
 
+#ifdef DEBUG_MODE
             if(this->debug)
             {
+                this->time_send = rclcpp::Clock().now();
+                //----第一次发送----//
+                if (this->tid == 1)
+                    RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Send Init ", this->serial_name.c_str(), this->serial_bps);
+                else
+                    RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
+
                 packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
                 packet.load_data<unsigned char>(0xbb, 6);
-                packet.load_data<unsigned char>(0x0d, 7);
-                packet.load_data<unsigned char>(0xff, 8);
+                // packet.load_data<unsigned char>(0x0d, 7);
+                // packet.load_data<unsigned char>(0xff, 8);
 
                 // packet.load_data<unsigned char>(frame_type::ChangeShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
@@ -168,7 +172,7 @@ namespace rm_base
                 // packet.load_data<float>(2.0, 10);
                 // packet.load_data<float>(3.0, 14);
                 // // packet.load_data<float>(4913.656, 18);
-                packet.load_data<double>(this->time_send.seconds(), 18);
+                // packet.load_data<double>(this->time_send.seconds(), 18);
 
                 // uint8_t bcc = 0x11;
                 uint32_t id = 0;
@@ -180,26 +184,32 @@ namespace rm_base
                 if(packet.unload_data(id, 1))
                     RCLCPP_INFO(node_->get_logger(), "SEND-ID: '%d'",  id);
                 double timex;
-                packet.unload_data<double>(timex, 18);
-                RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
+                // packet.unload_data<double>(timex, 18);
+                // RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
                 // if(packet.unload_data(bcc, 30))
                 //     RCLCPP_INFO(node_->get_logger(), "SEND-BCC: '%x'",  bcc);
             }      
+#endif            
 
-            packet.set_check_byte();        //设置校验位字节（check_byte）为BCC校验码
-            bool send_ack = this->packet_tool_->send_packet(packet);
-
+            // 设置校验位字节（check_byte）为BCC校验码
+            packet.set_check_byte();       
+            // 通过串口发送包到下位机
+            this->packet_tool_->send_packet(packet);
+            
+#ifdef DEBUG_MODE
             if (this->debug)
             {
+                bool send_ack = this->packet_tool_->send_packet(packet);
                 if (!send_ack)
-                    RCLCPP_INFO(node_->get_logger(), "Serial Send Fail!!!"); 
+                    RCLCPP_ERROR(node_->get_logger(), "Serial Send Fail!!!"); 
                 double time1, time2;
                 time1 = this->time_send.seconds();
                 time2 = rclcpp::Clock().now().seconds();
                 RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
                 RCLCPP_INFO(node_->get_logger(),"start[%d]: %f",this->tid,time2); 
             }
-            
+#endif
+
             //设定数据发送延迟
             // std::this_thread::sleep_for(std::chrono::microseconds(1));
 
@@ -208,12 +218,14 @@ namespace rm_base
         }
     }
 
+
     // service处理函数：模式切换
     void SimpleRobotBaseNode::ModeGet(const std::shared_ptr<rm_interfaces::srv::GetMode::Request> request,
                                         std::shared_ptr<rm_interfaces::srv::GetMode::Response> response)
     {
         response->mode = this->mode;
         std::string node_type = request->node_type;
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Mode Client: %s", node_type.c_str());
@@ -226,6 +238,7 @@ namespace rm_base
             else
                 RCLCPP_INFO(node_->get_logger(), "【Normal】 Mode.");
         }
+#endif
     }
 
     void SimpleRobotBaseNode::ColorGet(const std::shared_ptr<rm_interfaces::srv::GetColor::Request> request, 
@@ -233,6 +246,7 @@ namespace rm_base
     {
         response->color = this->color;
         std::string node_type = request->node_type;
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Color Client: %s", node_type.c_str());
@@ -241,6 +255,7 @@ namespace rm_base
             else
                 RCLCPP_INFO(node_->get_logger(), "Ours Color is 【RED】!");
         }
+#endif
     }
 
     void SimpleRobotBaseNode::ShootSpeedGet(const std::shared_ptr<rm_interfaces::srv::GetShootSpeed::Request> request,
@@ -248,11 +263,13 @@ namespace rm_base
     {
         response->shoot_speed = this->shoot_speed;
         std::string node_type = request->node_type;
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Color Client: %s", node_type.c_str());
             RCLCPP_INFO(node_->get_logger(), "Robot Shoot Speed is 【%d m/s】!", this->shoot_speed);
         }
+#endif
     }
 
     // 接收串口数据(电控部分)
@@ -271,21 +288,21 @@ namespace rm_base
                     packet.unload_data(recv_tid, 1);
                     if(recv_tid <= this->last_tid)
                         continue;
-
-                    if(this->debug)
-                    {
-                        this->time_recv = rclcpp::Clock().now();
-                        RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
-                        double timer = rclcpp::Clock().now().seconds();
-                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer); 
-                    }
                         
                     //------接收包种类------//
                     /*cmd【5】:帧种类位 0xa1云台控制 0xb1射速改变 0xc1模式改变*/
                     unsigned char cmd;             
                     packet.unload_data(cmd, 5);
+#ifdef DEBUG_MODE
                     if (this->debug)
+                    {
                         RCLCPP_INFO(node_->get_logger(), "RECV-cmd: '%x'", cmd);
+                        this->time_recv = rclcpp::Clock().now();
+                        RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
+                        double timer = rclcpp::Clock().now().seconds();
+                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer); 
+                    }
+#endif      
                     
                     //---- 一、模式切换: mode【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeMode)
@@ -293,48 +310,55 @@ namespace rm_base
                         /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关*/
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
+#ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
                             RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode); 
+                            if (mode == 0xaa){
+                                RCLCPP_INFO(node_->get_logger(), "Mode：【Auto Aim】");
+                            } else if (mode == 0xbb){
+                                RCLCPP_INFO(node_->get_logger(), "Mode：【Smell Nashor】");
+                            } else if (mode == 0xcc){
+                                RCLCPP_INFO(node_->get_logger(), "Mode：【Big Nashor】");
+                            } else {
+                                RCLCPP_INFO(node_->get_logger(), "Mode：【Normal】");
+                            }
                         }
-                            
-                        // if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
-                        //     this->SerialSend = true;    //开启发送部分，开始向下位机发送数据     
-                        // else
-                        //     this->SerialSend = false;   //关闭发送部分，正常模式
+#endif                            
+                        if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
+                            this->SerialSend = true;    //开启发送部分，开始向下位机发送数据     
+                        else
+                            this->SerialSend = false;   //关闭发送部分，正常模式
                          
                         if (mode == 0xaa){
                             this->mode = 1;
-                            RCLCPP_INFO(node_->get_logger(), "Mode：【Auto Aim】");
                         } else if (mode == 0xbb){
                             this->mode = 2;
-                            RCLCPP_INFO(node_->get_logger(), "Mode：【Smell Nashor】");
                         } else if (mode == 0xcc){
                             this->mode = 3;
-                            RCLCPP_INFO(node_->get_logger(), "Mode：【Big Nashor】");
                         } else {
                             this->mode = 0;
-                            RCLCPP_INFO(node_->get_logger(), "Mode：【Normal】");
                         }
                     }
                     //---- 二、获取射速: shoot_speed【6-9】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeShootSpeed)
                     {
-                        if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
                         int shoot_speed = 0;
                         packet.unload_data(shoot_speed, 6);
                         if(shoot_speed > 0)
                             this->shoot_speed = shoot_speed;
+#ifdef DEBUG_MODE
                         if(this->debug)
+                        {
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
                             RCLCPP_INFO(node_->get_logger(), "Shoot Speed: 【%d m/s】", shoot_speed);
+                        }
+#endif
                     }
                     //---- 三、获取我方颜色：color【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeColor)
                     {
-                        if(this->debug)
-                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Color Get]");
                         unsigned char color = 0x00;
                         packet.unload_data(color, 6);
                         if(color == 0xbb)
@@ -349,6 +373,18 @@ namespace rm_base
                         }
                         else
                             RCLCPP_ERROR(node_->get_logger(), "ERROR Color package !!!");
+#ifdef DEBUG_MODE
+                        if(this->debug)
+                        {
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Color Get]");
+                            if(color == 0xbb){
+                                RCLCPP_INFO(node_->get_logger(), "Color: 【BLUE】");
+                            } else if(color == 0x11){
+                                RCLCPP_INFO(node_->get_logger(), "Color: 【RED】");
+                            } else
+                                RCLCPP_ERROR(node_->get_logger(), "ERROR Color package !!!");
+                        }
+#endif  
                     }
                     //---- 四、获取当前姿态: tid【6-9】 yaw【10-13】 pitch【14-17】 roll【18-21】 time_stamp【22-26】 ----//
                     if (cmd == (unsigned char)frame_type::GimbalAngleControl)
@@ -381,20 +417,33 @@ namespace rm_base
                             RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
                         }
                     }
+
+#ifdef DEBUG_MODE
                     if (this->debug)
                     {
                         double time1, time2, time3;
                         time1 = this->time_recv.seconds();
                         time2 = rclcpp::Clock().now().seconds();
-                        // time3 = this->time_send.seconds();
+                        time3 = this->time_send.seconds();
                         // if (recv_tid == this->tid)
-                        packet.unload_data<double>(time3, 18);
-                        RCLCPP_INFO(node_->get_logger(),"\nsend-time %f, \nrecv-time %f",time3, time2);
+                        // packet.unload_data<double>(time3, 18);
+                        // RCLCPP_INFO(node_->get_logger(),"\nsend-time %f, \nrecv-time %f",time3, time2);
                         RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
  
                         // time3 = this->time_send.seconds();
-                        RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
+                        // RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,(time2-time1)); 
+
+                        if (this->max_time < (time2-time3) )
+                            this->max_time = (time2-time3);
+                        if (this->min_time > (time2-time3) )
+                            this->min_time = (time2-time3);
+
+                        RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
+                        RCLCPP_INFO(node_->get_logger(),"max: %f", this->max_time);
+                        RCLCPP_INFO(node_->get_logger(),"min: %f", this->min_time);
                     }
+#endif
+
                     this->last_tid = recv_tid;
                 }
                 // else
