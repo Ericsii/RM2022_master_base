@@ -5,7 +5,7 @@
  * @LastEditTime: 2021-11-10 18:00:42
  * @Description: file content
  */
-#include "rm_cam/mindvision_cam_node.hpp"
+#include "rm_entity_cam/mindvision_cam_node.hpp"
 
 #include <memory>
 #include <string>

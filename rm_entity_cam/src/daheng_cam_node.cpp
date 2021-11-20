@@ -6,7 +6,7 @@
  * @Description: file content
  */
 
-#include "rm_cam/daheng_cam_node.hpp"
+#include "rm_entity_cam/daheng_cam_node.hpp"
 
 namespace rm_cam
 {
