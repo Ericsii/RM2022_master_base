@@ -2,7 +2,7 @@
  * @Author: holakk
  * @Date: 2021-11-05 18:35:57
  * @LastEditors: holakk
- * @LastEditTime: 2021-11-10 17:47:10
+ * @LastEditTime: 2021-11-10 20:32:17
  * @Description: file content
  */
 #include "rm_entity_cam/daheng_cam.hpp"
@@ -27,6 +27,19 @@ namespace rm_cam
                          const std::vector<double> &lut_detail)
         : _camera_sn(camera_sn), _node(node), _config_path(config_path), _lut_path(lut_path), _lut_detail(lut_detail)
     {
+        _param[CamParam::Height] = 0;
+        _param[CamParam::Width] = 0;
+        _param[CamParam::Fps] = 0;
+        _param[CamParam::AutoExposure] = 0; // 0 为手动曝光; 其余为自动曝光亮度目标值
+        _param[CamParam::Exposure] = 0;     // 曝光时间 单位 us (默认 2000us)
+        _param[CamParam::WhiteBalance] = 0;
+        _param[CamParam::RGain] = 0;
+        _param[CamParam::GGain] = 0;
+        _param[CamParam::BGain] = 0;
+        _param[CamParam::Gamma] = 0;
+        _param[CamParam::Contrast] = 0; // TODO
+        _param[CamParam::Saturation] = 0;
+        _param[CamParam::Hue] = 0; // TODO
 
         // 在起始位置调用 GXInitLib()进行初始化，申请资源
         GX_STATUS GXstatus = GXInitLib();
