@@ -46,8 +46,6 @@ void GetModeNode::get_mode_loop()
   }
 
   auto get_mode_rqt_ = std::make_shared<rm_interfaces::srv::GetMode::Request>();
-    // get_mode_rqt_->node_type = "nashor";
-    // get_mode_rqt_->node_type = atoll(argv[1]);
   std::string n = "nashor";
   get_mode_rqt_->node_type = n;
   

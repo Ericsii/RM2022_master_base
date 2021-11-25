@@ -68,8 +68,8 @@ namespace rm_base
         template <typename T, int data_len = sizeof(T)>
         bool load_data(T const &data, int index)
         {
-            //越界检测，data_types--buffer_(1,capacity-2)
-            if (index > 0 && ((index + data_len) < (capacity - 2)))
+            //越界检测，data_types--buffer_(1,capacity-2)31 30 29
+            if (index > 0 && ((index + data_len) < (capacity - 1)))
             {
                 memcpy(buffer_ + index, &data, data_len);
                 return true;
@@ -91,7 +91,7 @@ namespace rm_base
         bool unload_data(T &data, int index)
         {
             //越界检测
-            if (index > 0 && ((index + data_len) < (capacity - 2)))
+            if (index > 0 && ((index + data_len) < (capacity - 1)))
             {
                 memcpy(&data, buffer_ + index, data_len);
                 return true;

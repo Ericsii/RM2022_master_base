@@ -1,7 +1,7 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "rm_interfaces/msg/gyro_attitude.hpp"
+#include "rm_interfaces/msg/gyro_quaternions.hpp"
 using std::placeholders::_1;
 
 class MinimalSubscriber : public rclcpp::Node
@@ -10,23 +10,22 @@ class MinimalSubscriber : public rclcpp::Node
     MinimalSubscriber()
     : Node("subscriber")
     {
-        gyro_attitude_sub_= this->create_subscription<rm_interfaces::msg::GyroAttitude>(
-                "gyro_attitude",
+        gyro_quaternions_sub_= this->create_subscription<rm_interfaces::msg::GyroQuaternions>(
+                "recv/gyro_quaternions",
                 10,
-                std::bind(&MinimalSubscriber::gyro_attitude_cb, this, std::placeholders::_1)
+                std::bind(&MinimalSubscriber::gyro_quaternions_cb, this, std::placeholders::_1)
             );
     }
 
   private:
-    void gyro_attitude_cb(const rm_interfaces::msg::GyroAttitude::SharedPtr msg) 
+    void gyro_quaternions_cb(const rm_interfaces::msg::GyroQuaternions::SharedPtr msg) 
     {
-        RCLCPP_INFO(this->get_logger(), "Gyro yaw: %f", msg->yaw);
-        RCLCPP_INFO(this->get_logger(), "Gyro pitch: %f", msg->pitch);
-        RCLCPP_INFO(this->get_logger(), "Gyro roll: %f", msg->roll);
-        RCLCPP_INFO(this->get_logger(), "Gyro tid: %d", msg->tid);
-        RCLCPP_INFO(this->get_logger(), "Gyro time: %f", msg->time_stamp);
+      RCLCPP_INFO(this->get_logger(), "RECV package type [Gimbel Angel Position]");
+      RCLCPP_INFO(this->get_logger(), "RECV-TID: '%d'", msg->tid);
+      RCLCPP_INFO(this->get_logger(), "RECV-GyroQuaternions: (%f, %f, %f, %f)", msg->q[0], msg->q[1], msg->q[2], msg->q[3]);
+      RCLCPP_INFO(this->get_logger(), "RECV-TIME:'%f'", msg->time_stamp);
     }
-    rclcpp::Subscription<rm_interfaces::msg::GyroAttitude>::SharedPtr gyro_attitude_sub_;
+    rclcpp::Subscription<rm_interfaces::msg::GyroQuaternions>::SharedPtr gyro_quaternions_sub_;
 };
 
 int main(int argc, char * argv[])
