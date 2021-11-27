@@ -105,7 +105,7 @@ namespace rm_base
             std::bind(&SimpleRobotBaseNode::ShootSpeedGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
         if(this->debug)
             RCLCPP_INFO(node_->get_logger(), "Serial:%s(%d) Init ", this->serial_name.c_str(), this->serial_bps);
             if(this->SerialRecv)
@@ -140,8 +140,8 @@ namespace rm_base
              * 9-12 pitch */
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            // packet.load_data<float>(msg->position.yaw, 5);
-            // packet.load_data<float>(msg->position.pitch, 9);
+            packet.load_data<float>(msg->position.yaw, 5);
+            packet.load_data<float>(msg->position.pitch, 9);
 
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);
@@ -149,7 +149,7 @@ namespace rm_base
             packet.load_data<int>(shoot, 21);
             **/
 
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
             if(this->debug)
             {
                 this->time_send = rclcpp::Clock().now();
@@ -197,9 +197,9 @@ namespace rm_base
             // 设置校验位字节（check_byte）为BCC校验码
             packet.set_check_byte();       
             // 通过串口发送包到下位机
-            // this->packet_tool_->send_packet(packet);
+            this->packet_tool_->send_packet(packet);
             
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
             if (this->debug)
             {
                 bool send_ack = this->packet_tool_->send_packet(packet);
@@ -228,7 +228,7 @@ namespace rm_base
     {
         response->mode = this->mode;
         std::string node_type = request->node_type;
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Mode Client: %s", node_type.c_str());
@@ -249,7 +249,7 @@ namespace rm_base
     {
         response->color = this->color;
         std::string node_type = request->node_type;
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Color Client: %s", node_type.c_str());
@@ -266,7 +266,7 @@ namespace rm_base
     {
         response->shoot_speed = this->shoot_speed;
         std::string node_type = request->node_type;
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Color Client: %s", node_type.c_str());
@@ -296,7 +296,7 @@ namespace rm_base
                     /*cmd【5】:帧种类位 0xa1云台控制 0xb1射速改变 0xc1模式改变*/
                     unsigned char cmd;             
                     packet.unload_data(cmd, 5);
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                     if (this->debug)
                     {
                         RCLCPP_INFO(node_->get_logger(), "RECV-cmd: '%x'", cmd);
@@ -313,7 +313,7 @@ namespace rm_base
                         /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关*/
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
@@ -360,7 +360,7 @@ namespace rm_base
                             this->shoot_speed = shoot_speed;
                         else
                             RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】ERROR!!!");
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
@@ -383,7 +383,7 @@ namespace rm_base
                         }
                         else
                             RCLCPP_ERROR(node_->get_logger(), "【Color】ERROR !!!");
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Color Get]");
@@ -409,7 +409,7 @@ namespace rm_base
                         Gyro_msg.q = Q;
                         Gyro_msg.time_stamp = time_stamp;
                         gyro_quaternions_pub_->publish(Gyro_msg);
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             // float yaw = 0.0, pitch = 0.0, roll = 0.0;
@@ -428,7 +428,7 @@ namespace rm_base
 #endif
                     }
 
-#ifndef DEBUG_MODE
+#ifdef DEBUG_MODE
                     if (this->debug)
                     {
                         double time1, time2, time3;
