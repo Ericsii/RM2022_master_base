@@ -113,7 +113,10 @@ serial_name：使用的串口名，serial_send：串口发送，serial_recv：�
                 {"serial_send": True},
                 {"serial_recv": True}
 ```
-  开启接收发送
+  开启DEBUG模式，接收发送
+```
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+```
 
 # 测试
 结点启动终端：
@@ -188,4 +191,5 @@ bps = 115200
 ## 11/18 联调
 上位机发-->下位机解、发-->上位机解，
  **1152000** 波特率延迟能到达 **1 ms** 左右
- 不稳定，在800us-2000us波动（一次发收400-1000us）较为合理，但表明有丢包现象
+ 不稳定，在800us-2000us波动（一次发收400-1000us）
+ 较为合理，但表明有丢包现象

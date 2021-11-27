@@ -140,8 +140,10 @@ namespace rm_base
              * 9-12 pitch */
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            packet.load_data<float>(msg->position.yaw, 5);
-            packet.load_data<float>(msg->position.pitch, 9);
+            packet.load_data<unsigned char>(0x01, 5);
+            packet.load_data<unsigned char>(0x01, 6);
+            packet.load_data<float>(msg->position.yaw, 7);
+            packet.load_data<float>(msg->position.pitch, 11);
 
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);

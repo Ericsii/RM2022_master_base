@@ -10,9 +10,14 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
- add_definitions("-DDEBUG_MODE")
-endif()
+option(DEBUG_MODE "option for debug" OFF)
+if(DEBUG_MODE)
+ add_definitions(-DDEBUG_MODE)
+endif(DEBUG_MODE)
+# set(CMAKE_BUILD_TYPE "Not Debug")
+# if(CMAKE_BUILD_TYPE MATCHES "Debug")
+#  add_definitions("-DDEBUG_MODE")
+# endif()
 
 
 # find dependencies
