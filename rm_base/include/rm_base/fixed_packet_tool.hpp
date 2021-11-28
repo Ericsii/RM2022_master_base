@@ -131,11 +131,11 @@ namespace rm_base
     template <int capacity>
     bool FixedPacketTool<capacity>::send_packet(const FixedPacket<capacity> &packet)
     {
-        printf("send:  ");
-        for (int i = 0; i < capacity; i++){
-            printf("%x ",+packet.buffer()[i]);
-        }
-        printf("\n");
+        // printf("send:  ");
+        // for (int i = 0; i < capacity; i++){
+        //     printf("%x ",+packet.buffer()[i]);
+        // }
+        // printf("\n");
 
         if (transporter_->write(packet.buffer(), capacity) == capacity)
         {
