@@ -380,7 +380,7 @@ namespace rm_base
                             shoot_speed_pub_->publish(Shoot_speed_msg);
                         }
                         else
-                            RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】ERROR!!!");
+                            RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】 ERROR!!!");
                         
                         
 #ifdef DEBUG_MODE
