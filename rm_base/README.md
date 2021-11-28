@@ -45,7 +45,7 @@
 |变量名|帧种类|数据|
 |-|-|-|
 |ChangeMode|模式帧|0xa1|
-|ChangeShootSpeed|射速帧|0xb1|
+|GetShootSpeed|射速帧|0xb1|
 |ChangeColor|颜色帧|0xc1|
 |GimbalAngleControl|姿态帧|0xd1|
 - 1.模式帧
@@ -115,7 +115,8 @@ serial_name：使用的串口名，serial_send：串口发送，serial_recv：�
 ```
   开启DEBUG模式，接收发送
 ```
-colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+colcon build --cmake-args -DDEBUG_MODE=0 --packages-select rm_base
+//colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
 ```
 
 # 测试

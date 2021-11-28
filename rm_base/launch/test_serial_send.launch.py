@@ -8,7 +8,7 @@ def generate_launch_description():
             package='rm_base',
             # namespace='rm_base',
             executable='simple_robot_base',
-            name = 'send',
+            name = 'sentry',
             output = 'screen',  
             parameters=[
                 {"serial_name": "/dev/ttyUSB0"},

@@ -9,9 +9,9 @@
 #include "rm_interfaces/msg/gimbal_cmd.hpp"
 #include "rm_interfaces/msg/gyro_attitude.hpp"
 #include "rm_interfaces/msg/gyro_quaternions.hpp"
+#include "rm_interfaces/msg/shoot_speed.hpp"
 #include "rm_interfaces/srv/get_mode.hpp"
 #include "rm_interfaces/srv/get_color.hpp"
-#include "rm_interfaces/srv/get_shoot_speed.hpp"
 #include <string>
 
 namespace rm_base
@@ -40,8 +40,6 @@ namespace rm_base
                                         std::shared_ptr<rm_interfaces::srv::GetMode::Response> response);
         void ColorGet(const std::shared_ptr<rm_interfaces::srv::GetColor::Request> request,
                                         std::shared_ptr<rm_interfaces::srv::GetColor::Response> response);
-        void ShootSpeedGet(const std::shared_ptr<rm_interfaces::srv::GetShootSpeed::Request> request,
-                                        std::shared_ptr<rm_interfaces::srv::GetShootSpeed::Response> response);
 
 
     private:
@@ -69,9 +67,9 @@ namespace rm_base
         rclcpp::Subscription<rm_interfaces::msg::GimbalCmd>::SharedPtr cmd_gimbal_sub_;
         // rclcpp::Publisher<rm_interfaces::msg::GyroAttitude>::SharedPtr gyro_attitude_pub_;
         rclcpp::Publisher<rm_interfaces::msg::GyroQuaternions>::SharedPtr gyro_quaternions_pub_;
+        rclcpp::Publisher<rm_interfaces::msg::ShootSpeed>::SharedPtr shoot_speed_pub_;
         rclcpp::Service<rm_interfaces::srv::GetMode>::SharedPtr get_mode_srv_;
         rclcpp::Service<rm_interfaces::srv::GetColor>::SharedPtr get_color_srv_;
-        rclcpp::Service<rm_interfaces::srv::GetShootSpeed>::SharedPtr get_shoot_speed_srv_;
 
         /**
          * @brief 订阅处理函数
@@ -96,7 +94,6 @@ namespace rm_base
         uint32_t last_tid = 0;
         int mode = 0;                       //模式：0-正常，1-自瞄，2-小符，3-大符
         int color = 1;                      //颜色：0-blue，1-red
-        int shoot_speed = 18;               //射速
         rclcpp::Time time_send;
         rclcpp::Time time_recv;
         std::string node_name;

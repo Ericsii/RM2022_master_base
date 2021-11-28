@@ -17,7 +17,7 @@ namespace rm_base
         typedef enum : unsigned char
         {
             ChangeMode = 0xa1,
-            ChangeShootSpeed= 0xb1,
+            GetShootSpeed= 0xb1,
             ChangeColor = 0xc1,
             GimbalAngleControl= 0xd1
         } frame_type;
@@ -61,6 +61,7 @@ namespace rm_base
             //串口传输Qos配置
             rclcpp::QoS cmd_gimbal_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS gyro_quaternions_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
+            rclcpp::QoS shoot_speed_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
@@ -72,6 +73,10 @@ namespace rm_base
             gyro_quaternions_pub_ = node_->create_publisher<rm_interfaces::msg::GyroQuaternions>(
                 this->node_name + "/gyro_quaternions",
                 gyro_quaternions_pub_qos_profile);
+            //topic发布：shoot_speed, 真实射速发布
+            shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
+                this->node_name + "/shoot_speed",
+                shoot_speed_pub_qos_profile);
         }
         else
         {
@@ -82,6 +87,9 @@ namespace rm_base
                 );
             gyro_quaternions_pub_ = node_->create_publisher<rm_interfaces::msg::GyroQuaternions>(
                 this->node_name + "/gyro_quaternions",
+                10);
+            shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
+                this->node_name + "/shoot_speed",
                 10);
         }  
 
@@ -97,12 +105,6 @@ namespace rm_base
         get_color_srv_ = node_->create_service<rm_interfaces::srv::GetColor>(
             this->node_name + "/get_color",
             std::bind(&SimpleRobotBaseNode::ColorGet, this, std::placeholders::_1, std::placeholders::_2)
-            );
-
-        //service服务端：获取射速
-        get_shoot_speed_srv_ = node_->create_service<rm_interfaces::srv::GetShootSpeed>(
-            this->node_name + "/get_shoot_speed",
-            std::bind(&SimpleRobotBaseNode::ShootSpeedGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
 #ifdef DEBUG_MODE
@@ -135,16 +137,43 @@ namespace rm_base
             this->tid++;
             //----将数据导入数据包中----//
             //----上位机->下位机----/
-            /* 1-4  tid 包编号
-             * 5-8  yaw 
-             * 9-12 pitch */
+
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-            packet.load_data<unsigned char>(0x01, 5);
-            packet.load_data<unsigned char>(0x01, 6);
-            packet.load_data<float>(msg->position.yaw, 7);
-            packet.load_data<float>(msg->position.pitch, 11);
 
+            if(this->node_name == "sentry")
+            {
+                /** 哨兵 sentry
+                 * 1-4  tid 包编号
+                 * 5    cmd 
+                 * 6    mode
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                packet.load_data<unsigned char>(0x05, 5);
+                packet.load_data<unsigned char>(0x05, 6);
+                float yaw = 0.0, pitch = 260.0 + float(tid%60);
+                if ((tid % 100) >= 50 )
+                    yaw = 100 - tid%100;
+                else
+                    yaw = tid%100;
+                
+                if ((tid % 80) >= 40 )
+                    pitch = 260.0+ float(80 - tid%80);
+                else
+                    pitch = 260.0 + float(tid%80);
+
+                packet.load_data<float>(yaw, 7);
+                packet.load_data<float>(pitch, 11);
+            }
+            else
+            {
+                /** 步兵 infantry、英雄 hero
+                 * 1-4  tid 包编号
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                packet.load_data<float>(msg->position.yaw, 7);
+                packet.load_data<float>(msg->position.pitch, 11);
+            }
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);
             packet.load_data<float>(msg->velocity.pitch, 17);
@@ -166,7 +195,7 @@ namespace rm_base
                 // packet.load_data<unsigned char>(0x0d, 7);
                 // packet.load_data<unsigned char>(0xff, 8);
 
-                // packet.load_data<unsigned char>(frame_type::ChangeShootSpeed, 5);
+                // packet.load_data<unsigned char>(frame_type::GetShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
 
                 // packet.load_data<unsigned char>(frame_type::ChangeColor, 5);
@@ -263,20 +292,6 @@ namespace rm_base
 #endif
     }
 
-    void SimpleRobotBaseNode::ShootSpeedGet(const std::shared_ptr<rm_interfaces::srv::GetShootSpeed::Request> request,
-                            std::shared_ptr<rm_interfaces::srv::GetShootSpeed::Response> response)
-    {
-        response->shoot_speed = this->shoot_speed;
-        std::string node_type = request->node_type;
-#ifdef DEBUG_MODE
-        if(this->debug)
-        {
-            RCLCPP_INFO(node_->get_logger(), "Get Color Client: %s", node_type.c_str());
-            RCLCPP_INFO(node_->get_logger(), "Robot Shoot Speed is 【%d m/s】!", this->shoot_speed);
-        }
-#endif
-    }
-
     // 接收串口数据(电控部分)
     void SimpleRobotBaseNode::listen_loop()
     {
@@ -353,15 +368,21 @@ namespace rm_base
                             this->SerialSend = false;
                         }
                     }
-                    //---- 二、获取射速: shoot_speed【6-9】 ----//
-                    if (cmd == (unsigned char)frame_type::ChangeShootSpeed)
+                    //---- 二、获取当前真实射速: shoot_speed【6-9】 ----//
+                    if (cmd == (unsigned char)frame_type::GetShootSpeed)
                     {
                         int shoot_speed = 0;
+                        rm_interfaces::msg::ShootSpeed Shoot_speed_msg;
                         packet.unload_data(shoot_speed, 6);
                         if(shoot_speed > 0)
-                            this->shoot_speed = shoot_speed;
+                        {
+                            Shoot_speed_msg.shoot_speed = shoot_speed;
+                            shoot_speed_pub_->publish(Shoot_speed_msg);
+                        }
                         else
                             RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】ERROR!!!");
+                        
+                        
 #ifdef DEBUG_MODE
                         if(this->debug)
                         {

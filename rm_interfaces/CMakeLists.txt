@@ -22,6 +22,7 @@ set(msg_files
   "msg/GimbalCmd.msg"
   "msg/GyroAttitude.msg"
   "msg/GyroQuaternions.msg"
+  "msg/ShootSpeed.msg"
 )
 
 set(srv_files
@@ -29,7 +30,6 @@ set(srv_files
   "srv/SetMode.srv"
   "srv/GetMode.srv"
   "srv/GetColor.srv"
-  "srv/GetShootSpeed.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
