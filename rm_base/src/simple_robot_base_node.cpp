@@ -62,6 +62,7 @@ namespace rm_base
             rclcpp::QoS cmd_gimbal_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS gyro_quaternions_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS shoot_speed_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
+            rclcpp::QoS pose_stamped_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
@@ -77,6 +78,10 @@ namespace rm_base
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
                 this->node_name + "/shoot_speed",
                 shoot_speed_pub_qos_profile);
+            //topic发布：pose_stamped, 真实位姿与对应时间戳发布
+            pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+                this->node_name + "/pose_stamped",
+                pose_stamped_pub_qos_profile);
         }
         else
         {
@@ -90,6 +95,9 @@ namespace rm_base
                 10);
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
                 this->node_name + "/shoot_speed",
+                10);
+            pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
+                this->node_name + "/pose_stamped",
                 10);
         }  
 
@@ -149,6 +157,7 @@ namespace rm_base
                  * 6    mode
                  * 5-8  yaw 
                  * 9-12 pitch */
+                //---------test code
                 packet.load_data<unsigned char>(0x05, 5);
                 packet.load_data<unsigned char>(0x05, 6);
                 float yaw = 0.0, pitch = 260.0 + float(tid%60);
@@ -164,6 +173,7 @@ namespace rm_base
 
                 packet.load_data<float>(yaw, 7);
                 packet.load_data<float>(pitch, 11);
+                //-----------test code
             }
             else
             {
@@ -306,9 +316,7 @@ namespace rm_base
                     //----接收包编号----//
                     /*recv_tid【1-4】:包编号位 0x00000000-0xffffffff*/
                     packet.unload_data(recv_tid, 1);
-                    if(recv_tid <= this->last_tid)
-                        continue;
-                        
+  
                     //------接收包种类------//
                     /*cmd【5】:帧种类位 0xa1云台控制 0xb1射速改变 0xc1模式改变*/
                     unsigned char cmd;             
@@ -323,7 +331,6 @@ namespace rm_base
                         RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer); 
                     }
 #endif      
-                    
                     //---- 一、模式切换: mode【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeMode)
                     {
@@ -371,6 +378,9 @@ namespace rm_base
                     //---- 二、获取当前真实射速: shoot_speed【6-9】 ----//
                     if (cmd == (unsigned char)frame_type::GetShootSpeed)
                     {
+                        if(recv_tid <= this->last_tid)
+                            continue;
+
                         int shoot_speed = 0;
                         float r = 0.5;      //低级滤波参数
                         rm_interfaces::msg::ShootSpeed Shoot_Speed_msg;
@@ -424,6 +434,9 @@ namespace rm_base
                     //---- 四、获取当前姿态:  Q1-Q4【6-9】【10-13】【14-17】【18-21】 time_stamp【22-29】 ----//
                     if (cmd == (unsigned char)frame_type::GimbalAngleControl)
                     {
+                        if(recv_tid <= this->last_tid)
+                            continue;
+                        
                         std::array<float, 4UL> Q;
                         double time_stamp = 0.0;
                         rm_interfaces::msg::GyroQuaternions Gyro_msg;
@@ -433,7 +446,16 @@ namespace rm_base
                         Gyro_msg.tid = recv_tid;
                         Gyro_msg.q = Q;
                         Gyro_msg.time_stamp = time_stamp;
-                        gyro_quaternions_pub_->publish(Gyro_msg);
+                        // gyro_quaternions_pub_->publish(Gyro_msg);
+                        
+                        geometry_msgs::msg::PoseStamped Pose_Stamped_msg;
+                        rclcpp::Time Stime(time_stamp);
+                        Pose_Stamped_msg.header.stamp = Stime;
+                        Pose_Stamped_msg.pose.orientation.x = Q[0];
+                        Pose_Stamped_msg.pose.orientation.y = Q[1];
+                        Pose_Stamped_msg.pose.orientation.z = Q[2];
+                        Pose_Stamped_msg.pose.orientation.w = Q[3];
+                        pose_stamped_pub_->publish(Pose_Stamped_msg);
 #ifdef DEBUG_MODE
                         if(this->debug)
                         {

@@ -12,6 +12,7 @@
 #include "rm_interfaces/msg/shoot_speed.hpp"
 #include "rm_interfaces/srv/get_mode.hpp"
 #include "rm_interfaces/srv/get_color.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 #include <string>
 
 namespace rm_base
@@ -67,6 +68,7 @@ namespace rm_base
         rclcpp::Subscription<rm_interfaces::msg::GimbalCmd>::SharedPtr cmd_gimbal_sub_;
         // rclcpp::Publisher<rm_interfaces::msg::GyroAttitude>::SharedPtr gyro_attitude_pub_;
         rclcpp::Publisher<rm_interfaces::msg::GyroQuaternions>::SharedPtr gyro_quaternions_pub_;
+        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_stamped_pub_;
         rclcpp::Publisher<rm_interfaces::msg::ShootSpeed>::SharedPtr shoot_speed_pub_;
         rclcpp::Service<rm_interfaces::srv::GetMode>::SharedPtr get_mode_srv_;
         rclcpp::Service<rm_interfaces::srv::GetColor>::SharedPtr get_color_srv_;
