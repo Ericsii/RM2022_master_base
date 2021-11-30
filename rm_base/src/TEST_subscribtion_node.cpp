@@ -18,7 +18,7 @@ class MinimalSubscriber : public rclcpp::Node
         //     );
 
         pose_stamped_sub_= this->create_subscription<geometry_msgs::msg::PoseStamped>(
-                "recv/pose_stamped",
+                "sentry/pose_stamped",
                 10,
                 std::bind(&MinimalSubscriber::pose_stamped_cb, this, std::placeholders::_1)
             );
@@ -35,7 +35,7 @@ class MinimalSubscriber : public rclcpp::Node
     void pose_stamped_cb(const geometry_msgs::msg::PoseStamped::SharedPtr msg) 
     {
       RCLCPP_INFO(this->get_logger(), "RECV package type [Gimbel Angel PoseStamped]");
-      RCLCPP_INFO(this->get_logger(), "RECV-TID: '%f'", msg->header.stamp.seconds());
+      RCLCPP_INFO(this->get_logger(), "RECV-TIME:'%f'", msg->header.stamp.sec+10e-9*msg->header.stamp.nanosec);
       RCLCPP_INFO(this->get_logger(), "RECV-GyroQuaternions: (%f, %f, %f, %f)", msg->pose.orientation.x, 
                     msg->pose.orientation.y, msg->pose.orientation.z, msg->pose.orientation.w);
     }
@@ -50,3 +50,24 @@ int main(int argc, char * argv[])
   rclcpp::shutdown();
   return 0;
 }
+/*
+
+rm_interfaces::msg::GyroQuaternions Gyro_msg;
+float yaw = 0.0, pitch = 0.0, roll = 0.0;
+rm_interfaces::msg::Gyroquaternions Gyro_msg;
+packet.unload_data(yaw, 6);
+packet.unload_data(pitch, 10);
+packet.unload_data(roll, 14);
+Gyro_msg.yaw = yaw;
+Gyro_msg.pitch = pitch;
+Gyro_msg.roll = roll;
+RCLCPP_INFO(node_->get_logger(), "RECV package type [Gimbel Angel Position]");
+RCLCPP_INFO(node_->get_logger(), "RECV-TID: '%d'", Gyro_msg.tid);
+RCLCPP_INFO(node_->get_logger(), "RECV-GyroQuaternions: (%f, %f, %f, %f)", Gyro_msg.q[0], Gyro_msg.q[1], Gyro_msg.q[2], Gyro_msg.q[3]);
+RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Gyro_msg.time_stamp);
+
+Gyro_msg.tid = recv_tid;
+Gyro_msg.q = Q;
+Gyro_msg.time_stamp = time_stamp;
+gyro_quaternions_pub_->publish(Gyro_msg);
+*/

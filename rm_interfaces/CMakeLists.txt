@@ -20,8 +20,6 @@ find_package(rosidl_default_generators REQUIRED)
 set(msg_files
   "msg/Gimbal.msg"
   "msg/GimbalCmd.msg"
-  "msg/GyroAttitude.msg"
-  "msg/GyroQuaternions.msg"
   "msg/ShootSpeed.msg"
 )
 

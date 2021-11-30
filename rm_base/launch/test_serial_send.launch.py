@@ -13,9 +13,15 @@ def generate_launch_description():
             parameters=[
                 {"serial_name": "/dev/ttyUSB0"},
                 {"serial_send": True},
-                {"serial_recv": False},
+                {"serial_recv": True},
                 {"serial_bps": 115200},
-                {"debug": False}
+                {"debug": True}
             ]
+        ),
+        Node(
+            package='rm_base',
+            executable='subscriber',
+            name = 'node1',
+            output = 'screen'
         )
     ])

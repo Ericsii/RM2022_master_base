@@ -70,11 +70,15 @@ namespace rm_base
                 cmd_gimbal_sub_qos_profile,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
+            //topic发布：gyro_quaternions, 陀螺仪姿态发布
+            gyro_quaternions_pub_ = node_->create_publisher<rm_interfaces::msg::GyroQuaternions>(
+                this->node_name + "/gyro_quaternions",
+                gyro_quaternions_pub_qos_profile);
             //topic发布：shoot_speed, 真实射速发布
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
                 this->node_name + "/shoot_speed",
                 shoot_speed_pub_qos_profile);
-            //topic发布：pose_stamped, 真实陀螺仪位姿与对应时间戳发布
+            //topic发布：pose_stamped, 真实位姿与对应时间戳发布
             pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
                 this->node_name + "/pose_stamped",
                 pose_stamped_pub_qos_profile);
@@ -86,6 +90,9 @@ namespace rm_base
                 10,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
+            gyro_quaternions_pub_ = node_->create_publisher<rm_interfaces::msg::GyroQuaternions>(
+                this->node_name + "/gyro_quaternions",
+                10);
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
                 this->node_name + "/shoot_speed",
                 10);
@@ -106,11 +113,6 @@ namespace rm_base
         get_color_srv_ = node_->create_service<rm_interfaces::srv::GetColor>(
             this->node_name + "/get_color",
             std::bind(&SimpleRobotBaseNode::ColorGet, this, std::placeholders::_1, std::placeholders::_2)
-            );
-        
-        //client客户端：设置击打模式
-        set_mode_cli_ = node_->create_client<rm_interfaces::srv::SetMode>(
-            this->node_name + "/set_mode"
             );
 
 #ifdef DEBUG_MODE
@@ -147,41 +149,41 @@ namespace rm_base
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
 
-            // if(this->node_name == "sentry")
-            // {
-            //     /** 哨兵 sentry
-            //      * 1-4  tid 包编号
-            //      * 5    type  巡逻、瞄准、开枪
-            //      * 6    shoot
-            //      * 5-8  yaw 
-            //      * 9-12 pitch */
-            //     //---------test code
-            //     packet.load_data<unsigned char>(msg->type, 5);
-            //     packet.load_data<unsigned char>(msg->shoot, 6);
-            //     float yaw = 0.0, pitch = 260.0 + float(tid%60);
-            //     if ((tid % 100) >= 50 )
-            //         yaw = 100 - tid%100;
-            //     else
-            //         yaw = tid%100;
+            if(this->node_name == "sentry")
+            {
+                /** 哨兵 sentry
+                 * 1-4  tid 包编号
+                 * 5    cmd 
+                 * 6    mode
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                //---------test code
+                packet.load_data<unsigned char>(0x05, 5);
+                packet.load_data<unsigned char>(0x05, 6);
+                float yaw = 0.0, pitch = 260.0 + float(tid%60);
+                if ((tid % 100) >= 50 )
+                    yaw = 100 - tid%100;
+                else
+                    yaw = tid%100;
                 
-            //     if ((tid % 80) >= 40 )
-            //         pitch = 260.0+ float(80 - tid%80);
-            //     else
-            //         pitch = 260.0 + float(tid%80);
+                if ((tid % 80) >= 40 )
+                    pitch = 260.0+ float(80 - tid%80);
+                else
+                    pitch = 260.0 + float(tid%80);
 
-            //     packet.load_data<float>(yaw, 7);
-            //     packet.load_data<float>(pitch, 11);
-            //     //-----------test code
-            // }
-            // else
-            // {
-            //     /** 步兵 infantry、英雄 hero
-            //      * 1-4  tid 包编号
-            //      * 5-8  yaw 
-            //      * 9-12 pitch */
-            //     packet.load_data<float>(msg->position.yaw, 7);
-            //     packet.load_data<float>(msg->position.pitch, 11);
-            // }
+                packet.load_data<float>(yaw, 7);
+                packet.load_data<float>(pitch, 11);
+                //-----------test code
+            }
+            else
+            {
+                /** 步兵 infantry、英雄 hero
+                 * 1-4  tid 包编号
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                packet.load_data<float>(msg->position.yaw, 7);
+                packet.load_data<float>(msg->position.pitch, 11);
+            }
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);
             packet.load_data<float>(msg->velocity.pitch, 17);
@@ -198,8 +200,10 @@ namespace rm_base
                 else
                     RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
 
-                packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-                packet.load_data<unsigned char>(0xbb, 6);
+                // packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
+                // packet.load_data<unsigned char>(0xbb, 6);
+                // packet.load_data<unsigned char>(0x0d, 7);
+                // packet.load_data<unsigned char>(0xff, 8);
 
                 // packet.load_data<unsigned char>(frame_type::GetShootSpeed, 5);
                 // packet.load_data<int>(18, 6);
@@ -207,12 +211,12 @@ namespace rm_base
                 // packet.load_data<unsigned char>(frame_type::ChangeColor, 5);
                 // packet.load_data<unsigned char>(0xbb, 6);
 
-                // packet.load_data<unsigned char>(frame_type::GimbalAngleControl, 5);
-                // packet.load_data<float>(1.0, 6);
-                // packet.load_data<float>(2.0, 10);
-                // packet.load_data<float>(3.0, 14);
-                // packet.load_data<float>(3.0, 18);
-                // packet.load_data<double>(this->time_send.seconds(), 22);
+                packet.load_data<unsigned char>(frame_type::GimbalAngleControl, 5);
+                packet.load_data<float>(1.0, 6);
+                packet.load_data<float>(2.0, 10);
+                packet.load_data<float>(3.0, 14);
+                packet.load_data<float>(3.0, 18);
+                packet.load_data<double>(this->time_send.seconds(), 22);
                 uint32_t id = 0;
                 if(packet.unload_data(id, 1))
                     RCLCPP_INFO(node_->get_logger(), "SEND-ID: '%d'",  id);
@@ -344,9 +348,10 @@ namespace rm_base
                             this->mode = 0;
                             this->SerialSend = false;
                         }
+
 #ifdef DEBUG_MODE
                         if(this->debug)
-                        {      
+                        {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
                             RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode); 
                             if (mode == 0xaa){
@@ -360,21 +365,6 @@ namespace rm_base
                             } else {
                                 RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
                             }
-                            
-                            // while (!set_mode_cli_->wait_for_service(std::chrono_literals:1s))
-                            // {
-                            //     if (!rclcpp::ok())
-                            //     {
-                            //         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-                            //         break;
-                            //     }
-                            //     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-                            // }
-                            auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
-                            set_mode_rqt_->mode = this->mode;
-                            auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);
-                            if(mode_set_result.get()->success)
-                                RCLCPP_INFO(node_->get_logger(), "Set Mode Success!");
                         }
 #endif    
                     }
@@ -467,7 +457,8 @@ namespace rm_base
 #ifdef DEBUG_MODE
                     if (this->debug)
                     {
-                        double time2, time3;
+                        double time1, time2, time3;
+                        time1 = this->time_recv.seconds();
                         time2 = rclcpp::Clock().now().seconds();
                         time3 = this->time_send.seconds();
 

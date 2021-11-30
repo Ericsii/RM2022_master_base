@@ -9,3 +9,5 @@ Gimbal velocity
 Gimbal scan_min_position
 Gimbal scan_max_position
 Gimbal scan_velocity
+## shoot control
+uint8 shoot
