@@ -372,22 +372,24 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::GetShootSpeed)
                     {
                         int shoot_speed = 0;
-                        rm_interfaces::msg::ShootSpeed Shoot_speed_msg;
+                        float r = 0.5;      //低级滤波参数
+                        rm_interfaces::msg::ShootSpeed Shoot_Speed_msg;
                         packet.unload_data(shoot_speed, 6);
                         if(shoot_speed > 0)
                         {
-                            Shoot_speed_msg.shoot_speed = shoot_speed;
-                            shoot_speed_pub_->publish(Shoot_speed_msg);
+                            Shoot_Speed_msg.shoot_speed = r * this->last_shoot_speed + (1-r) * shoot_speed;
+                            shoot_speed_pub_->publish(Shoot_Speed_msg);
                         }
                         else
                             RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】ERROR!!!");
                         
-                        
+                        this->last_shoot_speed = shoot_speed;
 #ifdef DEBUG_MODE
                         if(this->debug)
                         {
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
-                            RCLCPP_INFO(node_->get_logger(), "Shoot Speed: 【%d m/s】", shoot_speed);
+                            RCLCPP_INFO(node_->get_logger(), "Real Shoot Speed: 【%d m/s】", shoot_speed);
+                            RCLCPP_INFO(node_->get_logger(), "Pub Shoot Speed: 【%d m/s】", this->last_shoot_speed);
                         }
 #endif
                     }

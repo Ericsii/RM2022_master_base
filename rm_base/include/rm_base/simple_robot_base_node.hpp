@@ -99,6 +99,7 @@ namespace rm_base
         std::string node_name;
         double max_time = 0;
         double min_time = 10000.0;
+        float last_shoot_speed = 0;
     };
 }
 
