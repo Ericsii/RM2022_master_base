@@ -66,51 +66,50 @@ namespace rm_base
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                this->node_name + "/cmd_gimbal",
+                "/cmd_gimbal",
                 cmd_gimbal_sub_qos_profile,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
             //topic发布：shoot_speed, 真实射速发布
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
-                this->node_name + "/shoot_speed",
+                "/shoot_speed",
                 shoot_speed_pub_qos_profile);
             //topic发布：pose_stamped, 真实陀螺仪位姿与对应时间戳发布
             pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-                this->node_name + "/pose_stamped",
+                "/pose_stamped",
                 pose_stamped_pub_qos_profile);
         }
         else
         {
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                this->node_name + "/cmd_gimbal",
+                "/cmd_gimbal",
                 10,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
-                this->node_name + "/shoot_speed",
+                "/shoot_speed",
                 10);
             pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-                this->node_name + "/pose_stamped",
+                "/pose_stamped",
                 10);
         }  
 
         /*----------------------- Service ros服务 -----------------------*/
         //service服务端：获取模式
         get_mode_srv_ = node_->create_service<rm_interfaces::srv::GetMode>(
-            this->node_name + "/get_mode", 
-            // &SimpleRobotBaseNode::ModeGet);
+            "/get_mode", 
             std::bind(&SimpleRobotBaseNode::ModeGet, this, std::placeholders::_1, std::placeholders::_2)
             );
 
         //service服务端：获取颜色
         get_color_srv_ = node_->create_service<rm_interfaces::srv::GetColor>(
-            this->node_name + "/get_color",
+            "/get_color",
             std::bind(&SimpleRobotBaseNode::ColorGet, this, std::placeholders::_1, std::placeholders::_2)
             );
         
         //client客户端：设置击打模式
         set_mode_cli_ = node_->create_client<rm_interfaces::srv::SetMode>(
-            this->node_name + "/set_mode"
+            "/set_mode"
             );
 
 #ifdef DEBUG_MODE
@@ -147,41 +146,41 @@ namespace rm_base
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
 
-            // if(this->node_name == "sentry")
-            // {
-            //     /** 哨兵 sentry
-            //      * 1-4  tid 包编号
-            //      * 5    type  巡逻、瞄准、开枪
-            //      * 6    shoot
-            //      * 5-8  yaw 
-            //      * 9-12 pitch */
-            //     //---------test code
-            //     packet.load_data<unsigned char>(msg->type, 5);
-            //     packet.load_data<unsigned char>(msg->shoot, 6);
-            //     float yaw = 0.0, pitch = 260.0 + float(tid%60);
-            //     if ((tid % 100) >= 50 )
-            //         yaw = 100 - tid%100;
-            //     else
-            //         yaw = tid%100;
+            if(this->node_name == "sentry")
+            {
+                /** 哨兵 sentry
+                 * 1-4  tid 包编号
+                 * 5    type  巡逻、瞄准、开枪
+                 * 6    shoot
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                //---------test code
+                packet.load_data<unsigned char>(msg->type, 5);
+                packet.load_data<unsigned char>(msg->shoot, 6);
+                float yaw = 0.0, pitch = 260.0 + float(tid%60);
+                if ((tid % 100) >= 50 )
+                    yaw = 100 - tid%100;
+                else
+                    yaw = tid%100;
                 
-            //     if ((tid % 80) >= 40 )
-            //         pitch = 260.0+ float(80 - tid%80);
-            //     else
-            //         pitch = 260.0 + float(tid%80);
+                if ((tid % 80) >= 40 )
+                    pitch = 260.0+ float(80 - tid%80);
+                else
+                    pitch = 260.0 + float(tid%80);
 
-            //     packet.load_data<float>(yaw, 7);
-            //     packet.load_data<float>(pitch, 11);
-            //     //-----------test code
-            // }
-            // else
-            // {
-            //     /** 步兵 infantry、英雄 hero
-            //      * 1-4  tid 包编号
-            //      * 5-8  yaw 
-            //      * 9-12 pitch */
-            //     packet.load_data<float>(msg->position.yaw, 7);
-            //     packet.load_data<float>(msg->position.pitch, 11);
-            // }
+                packet.load_data<float>(yaw, 7);
+                packet.load_data<float>(pitch, 11);
+                //-----------test code
+            }
+            else
+            {
+                /** 步兵 infantry、英雄 hero
+                 * 1-4  tid 包编号
+                 * 5-8  yaw 
+                 * 9-12 pitch */
+                packet.load_data<float>(msg->position.yaw, 7);
+                packet.load_data<float>(msg->position.pitch, 11);
+            }
             /** RMUA
             packet.load_data<float>(msg->velocity.yaw, 13);
             packet.load_data<float>(msg->velocity.pitch, 17);
@@ -199,7 +198,7 @@ namespace rm_base
                     RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
 
                 packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-                packet.load_data<unsigned char>(0xbb, 6);
+                packet.load_data<unsigned char>(0xaa, 6);
 
                 // packet.load_data<unsigned char>(frame_type::GetShootSpeed, 5);
                 // if(this->tid%2 == 1)
@@ -320,7 +319,7 @@ namespace rm_base
                     if (cmd == (unsigned char)frame_type::ChangeMode)
                     {
                         /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关 0xee正常模式*/
-                        unsigned char mode = 0x00;
+                        unsigned char mode = 0xaa;
                         packet.unload_data(mode, 6);
 
                         if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
@@ -487,16 +486,11 @@ namespace rm_base
     {
         std::string serial_name_temp;
         int serial_bps_temp;
-        bool serial_send;
-        bool serial_recv;
         while (rclcpp::ok())
         {  
             //串口参数改变
             node_->get_parameter("serial_name",serial_name_temp);
             node_->get_parameter("serial_bps", serial_bps_temp);
-            //节点收发功能开关
-            node_->get_parameter("serial_send", serial_send);
-            node_->get_parameter("serial_recv", serial_recv);
             
             auto transporter_temp = std::make_shared<UartTransporter>(serial_name_temp, serial_bps_temp, node_);
 
@@ -511,13 +505,6 @@ namespace rm_base
                 this->serial_bps = serial_bps_temp; 
                 RCLCPP_INFO(node_->get_logger(), "serialBps change to %d", serial_bps_temp);  
                 this->packet_tool_ = std::make_shared<FixedPacketTool<32>>(transporter_temp);
-            }
-            if((serial_send != this->SerialSend) || (serial_recv != this->SerialRecv))
-            {
-                this->SerialSend = serial_send;
-                this->SerialRecv = serial_recv;
-                RCLCPP_INFO(node_->get_logger(), "serial_send change to %d", serial_send);  
-                RCLCPP_INFO(node_->get_logger(), "serial_recv change to %d", serial_recv); 
             }
         }
             

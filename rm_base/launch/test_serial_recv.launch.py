@@ -11,10 +11,10 @@ def generate_launch_description():
             name = 'recv',
             output = 'screen',
             parameters=[
-                {"serial_name": "/dev/ttyUSB0"},   #ttyUSB0
+                {"serial_name": "/dev/ttyUSB1"},   #ttyUSB0
                 {"serial_send": False},
                 {"serial_recv": True},
-                {"serial_bps": 1152000},
+                {"serial_bps": 115200},
                 {"debug": True}
             ]
         )

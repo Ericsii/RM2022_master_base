@@ -37,7 +37,7 @@ GetModeNode::GetModeNode(const rclcpp::NodeOptions &options)
 
   // get_mode_thread_ = std::make_unique<std::thread>(&GetModeNode::get_mode_loop, this);
   set_mode_srv_ = node_->create_service<rm_interfaces::srv::SetMode>(
-    "sentry/set_mode",
+    "set_mode",
     // &SimpleRobotBaseNode::ModeGet);
     std::bind(&GetModeNode::ModeSet, this, std::placeholders::_1, std::placeholders::_2));
 }
