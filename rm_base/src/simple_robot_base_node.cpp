@@ -323,19 +323,19 @@ namespace rm_base
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
 
-                        // if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
-                        // {
-                        //     this->SerialSend = true;    //开启发送部分，开始向下位机发送数据 
-                        // }    
-                        // else if (mode == 0xee)
-                        // {
-                        //     this->SerialSend = false;   //关闭发送部分，正常模式
-                        // }
-                        // else
-                        // {
-                        //     this->SerialSend = false;
-                        //     RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
-                        // }
+                        if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
+                        {
+                            this->SerialSend = true;    //开启发送部分，开始向下位机发送数据 
+                        }    
+                        else if (mode == 0xee)
+                        {
+                            this->SerialSend = false;   //关闭发送部分，正常模式
+                        }
+                        else
+                        {
+                            this->SerialSend = false;
+                            RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
+                        }
                            
                         auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
                         
