@@ -18,10 +18,16 @@ def generate_launch_description():
                 {"debug": True}
             ]
         ),
+        # Node(
+        #     package='rm_base',
+        #     executable='subscriber',
+        #     name = 'node1',
+        #     output = 'screen'
+        # )
         Node(
             package='rm_base',
-            executable='subscriber',
-            name = 'node1',
+            executable='get_mode_client',
+            name = 'clientnode',
             output = 'screen'
         )
     ])

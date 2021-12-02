@@ -29,10 +29,11 @@ include_directories(include)
 add_library(${PROJECT_NAME} SHARED
   src/transporter_driver/uart_transporter.cpp
   src/simple_robot_base_node.cpp
-  src/TEST_subscribtion_node.cpp
+  src/TEST_mode_get_client.cpp
 )
 
 #  src/TEST_mode_get_client.cpp
+# src/TEST_subscribtion_node.cpp
 
 
 set(dependencies
@@ -53,12 +54,12 @@ add_executable(simple_robot_base src/simple_robot_base_main.cpp)
 target_link_libraries(simple_robot_base ${PROJECT_NAME})
 
 # #server test入口
-# add_executable(get_mode_client src/TEST_mode_get_client.cpp)
-# target_link_libraries(get_mode_client ${PROJECT_NAME})
+add_executable(get_mode_client src/TEST_mode_get_client.cpp)
+target_link_libraries(get_mode_client ${PROJECT_NAME})
 
 #subscriber test入口
-add_executable(subscriber src/TEST_subscribtion_node.cpp)
-target_link_libraries(subscriber ${PROJECT_NAME})
+# add_executable(subscriber src/TEST_subscribtion_node.cpp)
+# target_link_libraries(subscriber ${PROJECT_NAME})
 
 install(
   DIRECTORY include/
@@ -76,12 +77,12 @@ install(TARGETS simple_robot_base
 )
 
 # #test server/subscriber
-# install(TARGETS get_mode_client
-#   DESTINATION lib/${PROJECT_NAME}
-# )
-install(TARGETS subscriber
- DESTINATION lib/${PROJECT_NAME}
+install(TARGETS get_mode_client
+  DESTINATION lib/${PROJECT_NAME}
 )
+# install(TARGETS subscriber
+#  DESTINATION lib/${PROJECT_NAME}
+# )
 
 install(
   DIRECTORY launch

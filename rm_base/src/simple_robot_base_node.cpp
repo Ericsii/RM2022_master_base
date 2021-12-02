@@ -202,7 +202,10 @@ namespace rm_base
                 packet.load_data<unsigned char>(0xbb, 6);
 
                 // packet.load_data<unsigned char>(frame_type::GetShootSpeed, 5);
-                // packet.load_data<int>(18, 6);
+                // if(this->tid%2 == 1)
+                //     packet.load_data<float>(18.0, 6);
+                // else
+                //     packet.load_data<float>(16.0, 6);
 
                 // packet.load_data<unsigned char>(frame_type::ChangeColor, 5);
                 // packet.load_data<unsigned char>(0xbb, 6);
@@ -233,11 +236,6 @@ namespace rm_base
                 bool send_ack = this->packet_tool_->send_packet(packet);
                 if (!send_ack)
                     RCLCPP_ERROR(node_->get_logger(), "Serial Send Fail!!!"); 
-                double time1, time2;
-                time1 = this->time_send.seconds();
-                time2 = rclcpp::Clock().now().seconds();
-                RCLCPP_INFO(node_->get_logger(),"send[%d]: %f",this->tid,(time2-time1)); 
-                RCLCPP_INFO(node_->get_logger(),"start[%d]: %f",this->tid,time2); 
             }
 #endif
 
@@ -260,11 +258,11 @@ namespace rm_base
         if(this->debug)
         {
             RCLCPP_INFO(node_->get_logger(), "Get Mode Client: %s", node_type.c_str());
-            if(this->mode == 1)
+            if(this->mode == 0xaa)
                 RCLCPP_INFO(node_->get_logger(), "【Auto Aim】 Mode!");
-            else if (this->mode == 2)
+            else if (this->mode == 0xbb)
                 RCLCPP_INFO(node_->get_logger(), "【Smell Power Lune】 Mode!");
-            else if (this->mode == 3)
+            else if (this->mode == 0xcc)
                 RCLCPP_INFO(node_->get_logger(), "【Big Power Lune】 Mode!");
             else
                 RCLCPP_INFO(node_->get_logger(), "【Normal】 Mode.");
@@ -311,9 +309,9 @@ namespace rm_base
 #ifdef DEBUG_MODE
                     if (this->debug)
                     {
+                        RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
                         RCLCPP_INFO(node_->get_logger(), "RECV-cmd: '%x'", cmd);
                         this->time_recv = rclcpp::Clock().now();
-                        RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
                         double timer = rclcpp::Clock().now().seconds();
                         RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer); 
                     }
@@ -321,34 +319,42 @@ namespace rm_base
                     //---- 一、模式切换: mode【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeMode)
                     {
-                        /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关*/
+                        /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关 0xee正常模式*/
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
+
+                        // if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) 
+                        // {
+                        //     this->SerialSend = true;    //开启发送部分，开始向下位机发送数据 
+                        // }    
+                        // else if (mode == 0xee)
+                        // {
+                        //     this->SerialSend = false;   //关闭发送部分，正常模式
+                        // }
+                        // else
+                        // {
+                        //     this->SerialSend = false;
+                        //     RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
+                        // }
+                           
+                        auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
                         
-                        if ((mode == 0xaa)||(mode == 0xbb)||(mode == 0xcc)) {
-                            this->SerialSend = true;    //开启发送部分，开始向下位机发送数据 
-                        }    
-                        else if (mode == 0xee){
-                            this->SerialSend = false;   //关闭发送部分，正常模式
+                        if (this->mode != mode)
+                        {
+                            set_mode_rqt_->mode = mode;
+                            auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);
+                            
+                            while(!mode_set_result.get()->success)
+                                auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);
                         }
-                        else
-                            RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
-                         
-                        if (mode == 0xaa){
-                            this->mode = 1;
-                        } else if (mode == 0xbb){
-                            this->mode = 2;
-                        } else if (mode == 0xcc){
-                            this->mode = 3;
-                        } else {
-                            this->mode = 0;
-                            this->SerialSend = false;
-                        }
+
+                        this->mode = mode;
+
 #ifdef DEBUG_MODE
                         if(this->debug)
                         {      
                             RCLCPP_INFO(node_->get_logger(), "RECV package type [Mode Change]");
-                            RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode); 
+                            RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", this->mode); 
                             if (mode == 0xaa){
                                 RCLCPP_INFO(node_->get_logger(), "Mode：【Auto Aim】");
                             } else if (mode == 0xbb){
@@ -360,21 +366,9 @@ namespace rm_base
                             } else {
                                 RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
                             }
-                            
-                            // while (!set_mode_cli_->wait_for_service(std::chrono_literals:1s))
-                            // {
-                            //     if (!rclcpp::ok())
-                            //     {
-                            //         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Interrupted while waiting for the service. Exiting.");
-                            //         break;
-                            //     }
-                            //     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "service not available, waiting again...");
-                            // }
-                            auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
-                            set_mode_rqt_->mode = this->mode;
-                            auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);
-                            if(mode_set_result.get()->success)
-                                RCLCPP_INFO(node_->get_logger(), "Set Mode Success!");
+                            // auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);    
+                            // if(mode_set_result.get()->success)
+                            //     RCLCPP_INFO(node_->get_logger(), "Set Mode Success!");
                         }
 #endif    
                     }
@@ -396,15 +390,17 @@ namespace rm_base
                         else
                             RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED】ERROR!!!");
                         
-                        this->last_shoot_speed = shoot_speed;
+                        
 #ifdef DEBUG_MODE
                         if(this->debug)
                         {
-                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Get]");
+                            RCLCPP_INFO(node_->get_logger(), "RECV package type [Shoot-speed Set]");
                             RCLCPP_INFO(node_->get_logger(), "Real Shoot Speed: 【%f m/s】", shoot_speed);
-                            RCLCPP_INFO(node_->get_logger(), "Pub Shoot Speed: 【%f m/s】", this->last_shoot_speed);
+                            RCLCPP_INFO(node_->get_logger(), "Last Shoot Speed: 【%f m/s】", this->last_shoot_speed);
+                            RCLCPP_INFO(node_->get_logger(), "Pub Shoot Speed: 【%f m/s】", Shoot_Speed_msg.shoot_speed);
                         }
 #endif
+                        this->last_shoot_speed = shoot_speed;
                     }
                     //---- 三、获取我方颜色：color【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeColor)
