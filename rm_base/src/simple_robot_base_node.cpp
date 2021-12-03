@@ -127,8 +127,6 @@ namespace rm_base
         //thread线程：串口数据接收
         listen_thread_ = std::make_unique<std::thread>(&SimpleRobotBaseNode::listen_loop, this);
 
-        //thread线程:参数配置
-        param_set_thread_ = std::make_unique<std::thread>(&SimpleRobotBaseNode::param_set_loop, this);
     }
 
     //topic订阅返回函数：发送串口数据
