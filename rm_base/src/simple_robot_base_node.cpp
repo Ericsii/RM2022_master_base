@@ -194,8 +194,8 @@ namespace rm_base
                 else
                     RCLCPP_INFO(node_->get_logger(), "\nSEND packet [%d]", this->tid);
 
-                packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
-                packet.load_data<unsigned char>(0xaa, 6);
+                // packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
+                // packet.load_data<unsigned char>(0xaa, 6);
 
                 // packet.load_data<unsigned char>(frame_type::GetShootSpeed, 5);
                 // if(this->tid%2 == 1)
@@ -460,12 +460,12 @@ namespace rm_base
                             this->min_time = (time2 - time3);
 
                         RCLCPP_INFO(node_->get_logger(), "all[%d]: %f", recv_tid, (time2 - time3));
-                        RCLCPP_INFO(node_->get_logger(), "max: %f", this->max_time);
-                        RCLCPP_INFO(node_->get_logger(), "min: %f", this->min_time);
-                        if((time2 - time3)>=0.001)
+                        // RCLCPP_INFO(node_->get_logger(), "max: %f", this->max_time);
+                        // RCLCPP_INFO(node_->get_logger(), "min: %f", this->min_time);
+                        if ((time2 - time3) >= 0.001)
                             this->drop_pkg++;
                         RCLCPP_INFO(node_->get_logger(), "drop: %d", this->drop_pkg);
-                        RCLCPP_INFO(node_->get_logger(), "drop rate: %f", float(this->drop_pkg*1.0/this->tid*1.0));
+                        RCLCPP_INFO(node_->get_logger(), "drop rate: %f", float(this->drop_pkg * 1.0 / this->tid * 1.0));
                     }
 #endif
                     this->last_tid = recv_tid;
