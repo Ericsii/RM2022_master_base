@@ -14,8 +14,9 @@ def generate_launch_description():
                 {"serial_name": "/dev/ttyUSB1"},   #ttyUSB0
                 {"serial_send": False},
                 {"serial_recv": True},
-                {"serial_bps": 115200},
-                {"debug": True}
+                {"serial_bps": 1152000},
+                {"debug": False},
+                {"custom_qos": True}
             ]
         )
     ])

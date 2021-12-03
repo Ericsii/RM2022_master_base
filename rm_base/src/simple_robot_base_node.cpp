@@ -60,7 +60,6 @@ namespace rm_base
         {
             //串口传输Qos配置
             rclcpp::QoS cmd_gimbal_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
-            rclcpp::QoS gyro_quaternions_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS shoot_speed_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS pose_stamped_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
 
@@ -228,15 +227,6 @@ namespace rm_base
             packet.set_check_byte();       
             // 通过串口发送包到下位机
             this->packet_tool_->send_packet(packet);
-            
-#ifdef DEBUG_MODE
-            if (this->debug)
-            {
-                bool send_ack = this->packet_tool_->send_packet(packet);
-                if (!send_ack)
-                    RCLCPP_ERROR(node_->get_logger(), "Serial Send Fail!!!"); 
-            }
-#endif
 
             //设定数据发送延迟
             // std::this_thread::sleep_for(std::chrono::microseconds(1));
@@ -466,48 +456,24 @@ namespace rm_base
                         time2 = rclcpp::Clock().now().seconds();
                         time3 = this->time_send.seconds();
 
-                        if (this->max_time < (time2-time3) )
-                            this->max_time = (time2-time3);
-                        if (this->min_time > (time2-time3) )
-                            this->min_time = (time2-time3);
+                        if (this->max_time < (time2 - time3))
+                            this->max_time = (time2 - time3);
+                        if (this->min_time > (time2 - time3))
+                            this->min_time = (time2 - time3);
 
-                        RCLCPP_INFO(node_->get_logger(),"all[%d]: %f",recv_tid,(time2-time3));
-                        RCLCPP_INFO(node_->get_logger(),"max: %f", this->max_time);
-                        RCLCPP_INFO(node_->get_logger(),"min: %f", this->min_time);
+                        RCLCPP_INFO(node_->get_logger(), "all[%d]: %f", recv_tid, (time2 - time3));
+                        RCLCPP_INFO(node_->get_logger(), "max: %f", this->max_time);
+                        RCLCPP_INFO(node_->get_logger(), "min: %f", this->min_time);
+                        if((time2 - time3)>=0.001)
+                            this->drop_pkg++;
+                        RCLCPP_INFO(node_->get_logger(), "drop: %d", this->drop_pkg);
+                        RCLCPP_INFO(node_->get_logger(), "drop rate: %f", float(this->drop_pkg*1.0/this->tid*1.0));
                     }
 #endif
                     this->last_tid = recv_tid;
                 }
             }
         }
-    }
-
-    void SimpleRobotBaseNode::param_set_loop()
-    {
-        std::string serial_name_temp;
-        int serial_bps_temp;
-        while (rclcpp::ok())
-        {  
-            //串口参数改变
-            node_->get_parameter("serial_name",serial_name_temp);
-            node_->get_parameter("serial_bps", serial_bps_temp);
-            
-            auto transporter_temp = std::make_shared<UartTransporter>(serial_name_temp, serial_bps_temp, node_);
-
-            if((serial_name_temp != this->serial_name))
-            {
-                this->serial_name = serial_name_temp;
-                RCLCPP_INFO(node_->get_logger(), "serialName change to %s", serial_name_temp.c_str());   
-                this->packet_tool_ = std::make_shared<FixedPacketTool<32>>(transporter_temp);
-            }
-            if((serial_bps_temp != this->serial_bps))
-            {
-                this->serial_bps = serial_bps_temp; 
-                RCLCPP_INFO(node_->get_logger(), "serialBps change to %d", serial_bps_temp);  
-                this->packet_tool_ = std::make_shared<FixedPacketTool<32>>(transporter_temp);
-            }
-        }
-            
     }
 }
 
