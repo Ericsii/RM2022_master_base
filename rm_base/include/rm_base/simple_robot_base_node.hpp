@@ -29,6 +29,7 @@ namespace rm_base
 
         //线程执行函数
         void listen_loop();
+        void cam_imu_syn_loop();
 
         /**
          * @brief Service服务端返回处理函数
@@ -90,7 +91,7 @@ namespace rm_base
          */
         uint32_t tid = 0;                   //包编号
         uint32_t last_tid = 0;
-        int mode = 0;                       //模式：0-正常，1-自瞄，2-小符，3-大符
+        int mode = 0xee;                       //模式：0-正常，1-自瞄，2-小符，3-大符
         int color = 1;                      //颜色：0-blue，1-red
         float last_shoot_speed = 0;
         std::string node_name;
@@ -102,7 +103,8 @@ namespace rm_base
         rclcpp::Time time_recv;
         double max_time = 0;
         double min_time = 10000.0;
-        double time_RTT[10];
+        double time_RTT[10]={0};
+        int RTT_time = 0;
         double time_delay = 0;
         int drop_pkg = 0;
     };
