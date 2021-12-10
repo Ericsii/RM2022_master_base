@@ -15,7 +15,7 @@ def generate_launch_description():
                 {"serial_send": False},
                 {"serial_recv": True},
                 {"serial_bps": 1152000},
-                {"debug": False},
+                {"debug": True},
                 {"custom_qos": True}
             ]
         )

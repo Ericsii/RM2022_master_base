@@ -13,18 +13,18 @@ def generate_launch_description():
             parameters=[
                 {"serial_name": "/dev/ttyUSB0"},
                 {"serial_send": True},
-                {"serial_recv": True},
+                {"serial_recv": False},
                 {"serial_bps": 1152000},
-                {"debug": False},
+                {"debug": True},
                 {"custom_qos": True}
             ]
         ),
-        Node(
-            package='rm_base',
-            executable='get_mode_client',
-            name = 'clientnode',
-            output = 'screen'
-        )
+        # Node(
+        #     package='rm_base',
+        #     executable='get_mode_client',
+        #     name = 'clientnode',
+        #     output = 'screen'
+        # )
         # Node(
         #     package='rm_base',
         #     executable='subscriber',

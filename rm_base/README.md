@@ -78,6 +78,14 @@
 |GyroQuaternions|当前姿态四元数 |float32 ：Q1【6-9】Q2【10-13】Q3【14-17】Q4【18-21】|
 |time_stamp|时间戳|float64/double【22-29】|
 
+- 5.时间戳同步帧
+
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】1-5，同步五次取平均|
+|cmd|0xe1|unsigned char【5】|
+|time_stamp|时间戳|float64/double【6-13】|
+
 ## 环境搭建
 ### 1.安装ROS2（https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html） ，安装desktop版本
 ### 2. 初始化：workspace and packages init

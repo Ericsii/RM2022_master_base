@@ -19,7 +19,8 @@ namespace rm_base
             ChangeMode = 0xa1,
             GetShootSpeed= 0xb1,
             ChangeColor = 0xc1,
-            GimbalAngleControl= 0xd1
+            GimbalAngleControl= 0xd1,
+            TimeStampSyn = 0xe1
         } frame_type;
     }
 
@@ -135,54 +136,69 @@ namespace rm_base
         if(this->SerialSend)
         {
             if((this->tid >= (2147483647-100)))
-                this->tid = 1;
+                this->tid = 0;
             this->tid++;
-            //----将数据导入数据包中----//
-            //----上位机->下位机----/
 
+            this->time_send = rclcpp::Clock().now();
             FixedPacket<32> packet;
             packet.load_data<uint32_t>(this->tid, 1);
-
-            if(this->node_name == "sentry")
+            //----发送初始化：同步上下位机时间戳----//
+            if (this->tid <= 5)
             {
-                /** 哨兵 sentry
-                 * 1-4  tid 包编号
-                 * 5    type  巡逻、瞄准、开枪
-                 * 6    shoot
-                 * 5-8  yaw 
-                 * 9-12 pitch */
-                //---------test code
-                packet.load_data<unsigned char>(msg->type, 5);
-                packet.load_data<unsigned char>(msg->shoot, 6);
-                float yaw = 0.0, pitch = 260.0 + float(tid%60);
-                if ((tid % 100) >= 50 )
-                    yaw = 100 - tid%100;
-                else
-                    yaw = tid%100;
-                
-                if ((tid % 80) >= 40 )
-                    pitch = 260.0+ float(80 - tid%80);
-                else
-                    pitch = 260.0 + float(tid%80);
-
-                packet.load_data<float>(yaw, 7);
-                packet.load_data<float>(pitch, 11);
-                //-----------test code
+                if(this->debug)
+                {
+                    RCLCPP_INFO(node_->get_logger(), "Timestamp Synchronization Package[%d]", this->tid);
+                    RCLCPP_INFO(node_->get_logger(), "Timestamp Now: %f", rclcpp::Clock().now().seconds());
+                }
+                packet.load_data<unsigned char>(frame_type::TimeStampSyn, 5);
+                packet.load_data<double>(this->time_send.seconds(), 22);
             }
             else
             {
-                /** 步兵 infantry、英雄 hero
-                 * 1-4  tid 包编号
-                 * 5-8  yaw 
-                 * 9-12 pitch */
-                packet.load_data<float>(msg->position.yaw, 7);
-                packet.load_data<float>(msg->position.pitch, 11);
+                //----将数据导入数据包中----//
+                //----上位机->下位机----/
+                if(this->node_name == "sentry")
+                {
+                    /** 哨兵 sentry
+                     * 1-4  tid 包编号
+                     * 5    type  巡逻、瞄准、开枪
+                     * 6    shoot
+                     * 5-8  yaw 
+                     * 9-12 pitch */
+                    //---------test code
+                    packet.load_data<unsigned char>(msg->type, 5);
+                    packet.load_data<unsigned char>(msg->shoot, 6);
+                    float yaw = 0.0, pitch = 260.0 + float(tid%60);
+                    if ((tid % 100) >= 50 )
+                        yaw = 100 - tid%100;
+                    else
+                        yaw = tid%100;
+                    
+                    if ((tid % 80) >= 40 )
+                        pitch = 260.0+ float(80 - tid%80);
+                    else
+                        pitch = 260.0 + float(tid%80);
+
+                    packet.load_data<float>(yaw, 7);
+                    packet.load_data<float>(pitch, 11);
+                    //-----------test code
+                }
+                else
+                {
+                    /** 步兵 infantry、英雄 hero
+                     * 1-4  tid 包编号
+                     * 5-8  yaw 
+                     * 9-12 pitch */
+                    packet.load_data<float>(msg->position.yaw, 7);
+                    packet.load_data<float>(msg->position.pitch, 11);
+                }
+                /** RMUA
+                packet.load_data<float>(msg->velocity.yaw, 13);
+                packet.load_data<float>(msg->velocity.pitch, 17);
+                packet.load_data<int>(shoot, 21);
+                **/
             }
-            /** RMUA
-            packet.load_data<float>(msg->velocity.yaw, 13);
-            packet.load_data<float>(msg->velocity.pitch, 17);
-            packet.load_data<int>(shoot, 21);
-            **/
+            
 
 #ifdef DEBUG_MODE
             if(this->debug)
@@ -216,7 +232,7 @@ namespace rm_base
                 if(packet.unload_data(id, 1))
                     RCLCPP_INFO(node_->get_logger(), "SEND-ID: '%d'",  id);
                 double timex;
-                packet.unload_data<double>(timex, 22);
+                packet.unload_data<double>(timex, 6);
                 RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
             }      
 #endif            
@@ -225,10 +241,6 @@ namespace rm_base
             packet.set_check_byte();       
             // 通过串口发送包到下位机
             this->packet_tool_->send_packet(packet);
-
-            //设定数据发送延迟
-            // std::this_thread::sleep_for(std::chrono::microseconds(1));
-
             //清理缓存
             packet.clear();
         }
@@ -427,7 +439,7 @@ namespace rm_base
                         double time_stamp = 0.0;
                         packet.unload_data(Q, 6);
                         packet.unload_data(time_stamp, 22);
-
+                        time_stamp = rclcpp::Clock().now().seconds() - this->time_delay;
                         geometry_msgs::msg::PoseStamped Pose_Stamped_msg;
                         Pose_Stamped_msg.header.stamp.sec = static_cast<int32_t>(time_stamp);
                         Pose_Stamped_msg.header.stamp.nanosec = static_cast<uint32_t>((time_stamp - Pose_Stamped_msg.header.stamp.sec) * 1000000000);
@@ -446,14 +458,35 @@ namespace rm_base
                         }
 #endif
                     }
-
+                    //---- 五、同步时间戳:  time_stamp【6-13】 ----//
+                    if (cmd == (unsigned char)frame_type::TimeStampSyn)
+                    {
+                        double down_time_stamp = 0.0;
+                        double last_time_stamp = 0.0;
+                        packet.unload_data(last_time_stamp, 6);
+                        packet.unload_data(down_time_stamp, 14);
+                        this->time_RTT[recv_tid] = rclcpp::Clock().now().seconds() - last_time_stamp;
+                        this->time_RTT[6] += this->time_RTT[recv_tid]; 
+                        if(recv_tid == 5)
+                        {
+                            time_RTT[0] = time_RTT[6]/5;
+                            this->time_delay = time_RTT[0]/2;
+                        }
+#ifdef DEBUG_MODE
+                        if(this->debug)
+                        {
+                            RCLCPP_INFO(node_->get_logger(), "time_RTT[%d]: %f", recv_tid, this->time_RTT[recv_tid]);
+                            RCLCPP_INFO(node_->get_logger(), "delay[%d]: %f", recv_tid, this->time_delay);
+                        }
+#endif
+                    }
 #ifdef DEBUG_MODE
                     if (this->debug)
                     {
                         double time2, time3;
                         time2 = rclcpp::Clock().now().seconds();
-                        time3 = this->time_send.seconds();
-
+                        // time3 = this->time_send.seconds();
+                        packet.unload_data(time3, 6);
                         if (this->max_time < (time2 - time3))
                             this->max_time = (time2 - time3);
                         if (this->min_time > (time2 - time3))

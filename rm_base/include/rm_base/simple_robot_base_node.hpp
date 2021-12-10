@@ -102,6 +102,8 @@ namespace rm_base
         rclcpp::Time time_recv;
         double max_time = 0;
         double min_time = 10000.0;
+        double time_RTT[10];
+        double time_delay = 0;
         int drop_pkg = 0;
     };
 }
