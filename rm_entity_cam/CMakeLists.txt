@@ -28,28 +28,36 @@ set(dependencies
 option(WITH_MVSDK "Build with MindVisionSDK" ON)
 option(WITH_GXISDK "Build with DaHengGxiSDK" ON)
 
+message(STATUS "System processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
 # MVSDK
 if(WITH_MVSDK)
     include_directories("dependencies/MVSDK/include")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+        set(MVSDK_LIB_DIR "dependencies/MVSDK/lib/x64")
         link_directories("dependencies/MVSDK/lib/x64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+        set(MVSDK_LIB_DIR "dependencies/MVSDK/lib/arm64")
         link_directories("dependencies/MVSDK/lib/arm64")
     else()
         message(FATAL_ERROR "Unkown host system processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
     endif()
+    set(MVSDK_LIB_SO "${PROJECT_SOURCE_DIR}/${MVSDK_LIB_DIR}/libMVSDK.so")
 endif()
 
 # DaHengGxiSDK
 if(WITH_GXISDK)
     include_directories("dependencies/DaHengGxiSDK/include")
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+        set(GXI_LIB_DIR "dependencies/DaHengGxiSDK/lib/x86_64")
         link_directories("dependencies/DaHengGxiSDK/lib/x86_64")
     elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+        set(GXI_LIB_DIR "dependencies/DaHengGxiSDK/lib/arm64")
         link_directories("dependencies/DaHengGxiSDK/lib/arm64")
     else()
         message(FATAL_ERROR "Unkown host system processor architecture: ${CMAKE_HOST_SYSTEM_PROCESSOR}!")
     endif()
+    set(GXI_LIB_SO "${PROJECT_SOURCE_DIR}/${GXI_LIB_DIR}/libgxiapi.so")
 endif()
 
 # Include
@@ -89,6 +97,12 @@ target_link_libraries(daheng_cam ${PROJECT_NAME})
 # register component nodes
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::MindVisionCamNode")
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_cam::DaHengCamNode")
+
+# install cam driver lib
+install(
+    FILES ${MVSDK_LIB_SO} ${GXI_LIB_SO}
+    DESTINATION lib
+)
 
 # install inlude directories
 install(
