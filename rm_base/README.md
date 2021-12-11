@@ -45,7 +45,7 @@
 |变量名|帧种类|数据|
 |-|-|-|
 |ChangeMode|模式帧|0xa1|
-|ChangeShootSpeed|射速帧|0xb1|
+|GetShootSpeed|射速帧|0xb1|
 |ChangeColor|颜色帧|0xc1|
 |GimbalAngleControl|姿态帧|0xd1|
 - 1.模式帧
@@ -77,6 +77,14 @@
 |cmd|0xd1|unsigned char【5】|
 |GyroQuaternions|当前姿态四元数 |float32 ：Q1【6-9】Q2【10-13】Q3【14-17】Q4【18-21】|
 |time_stamp|时间戳|float64/double【22-29】|
+
+- 5.时间戳同步帧
+
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】1-5，同步五次取平均|
+|cmd|0xe1|unsigned char【5】|
+|time_stamp|时间戳|float64/double【6-13】|
 
 ## 环境搭建
 ### 1.安装ROS2（https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html） ，安装desktop版本
@@ -113,7 +121,11 @@ serial_name：使用的串口名，serial_send：串口发送，serial_recv：�
                 {"serial_send": True},
                 {"serial_recv": True}
 ```
-  开启接收发送
+  开启DEBUG模式，接收发送
+```
+colcon build --cmake-args -DDEBUG_MODE=0 --packages-select rm_base
+//colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+```
 
 # 测试
 结点启动终端：
@@ -188,4 +200,5 @@ bps = 115200
 ## 11/18 联调
 上位机发-->下位机解、发-->上位机解，
  **1152000** 波特率延迟能到达 **1 ms** 左右
- 不稳定，在800us-2000us波动（一次发收400-1000us）较为合理，但表明有丢包现象
+ 不稳定，在800us-2000us波动（一次发收400-1000us）
+ 较为合理，但表明有丢包现象

@@ -16,12 +16,11 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-# 导入自定义接口
+# 导入自定义接口 
 set(msg_files
   "msg/Gimbal.msg"
   "msg/GimbalCmd.msg"
-  "msg/GyroAttitude.msg"
-  "msg/GyroQuaternions.msg"
+  "msg/ShootSpeed.msg"
 )
 
 set(srv_files
@@ -29,7 +28,6 @@ set(srv_files
   "srv/SetMode.srv"
   "srv/GetMode.srv"
   "srv/GetColor.srv"
-  "srv/GetShootSpeed.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
