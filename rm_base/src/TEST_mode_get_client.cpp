@@ -1,7 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rm_interfaces/srv/get_mode.hpp"
 #include "rm_interfaces/srv/set_mode.hpp"
-#include "rm_interfaces/msg/gyro_attitude.hpp"
 #include <chrono>
 #include <thread>
 using namespace std::chrono_literals;
