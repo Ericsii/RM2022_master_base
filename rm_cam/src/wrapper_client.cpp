@@ -73,6 +73,10 @@ namespace rm_cam
                     "[get_camera_info] client interrupted!");
                 return false;
             }
+            RCLCPP_INFO(
+                node_->get_logger(),
+                "[get_camera_info] Trying to get camera info."
+            );
         }
         auto request = std::make_shared<rm_interfaces::srv::GetCameraInfo::Request>();
         auto result_future = client->async_send_request(request);

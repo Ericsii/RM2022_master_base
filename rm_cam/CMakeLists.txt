@@ -16,6 +16,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(rm_interfaces REQUIRED)
 
@@ -31,6 +32,7 @@ add_library(${PROJECT_NAME} SHARED
     ${cam_drivers}
     "src/cam_server.cpp"
     "src/cam_client.cpp"
+    "src/wrapper_client.cpp"
     "src/virtual_cam_node.cpp"
 )
 
@@ -40,6 +42,7 @@ set(dependencies
     rclcpp_components
     sensor_msgs
     cv_bridge
+    message_filters
     OpenCV
     rm_interfaces
 )

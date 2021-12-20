@@ -40,7 +40,7 @@ namespace rm_cam
             const std::string &camera_name,
             const std::string &imu_name,
             DataCallBack process_fn);
-        ~WrapperClient();
+        ~WrapperClient() = default;
 
         /**
          * @brief Get the camera info object
