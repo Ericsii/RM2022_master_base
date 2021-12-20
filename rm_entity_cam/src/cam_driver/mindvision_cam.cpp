@@ -231,13 +231,14 @@ namespace rm_cam
         }
 
         // 读取帧 超时100ms
-        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 20);
+        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 100);
         if (status != CAMERA_STATUS_SUCCESS)
         {
             RCLCPP_WARN(
                 node_->get_logger(),
-                "Frame read failed!"
+                "ERROR [%d] - Frame read failed!", status
             );
+            return false;
         }
 
         image = cv::Mat(header.iHeight, header.iWidth, CV_8UC3);
@@ -245,7 +246,7 @@ namespace rm_cam
         status = CameraImageProcess(hCamera_, pFrameBuffer_, image.data, &header);
         if (status != CAMERA_STATUS_SUCCESS)
         {
-            RCLCPP_WARN(node_->get_logger(), "Image process failed!");
+            RCLCPP_WARN(node_->get_logger(), "ERROR [%d] - Image process failed!", status);
         }
         // 时间戳
         timestamp_ms = header.uiTimeStamp / 10.;
