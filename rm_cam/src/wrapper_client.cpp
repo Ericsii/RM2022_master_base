@@ -61,7 +61,7 @@ namespace rm_cam
             rclcpp::CallbackGroupType::MutuallyExclusive, false);
         auto exec = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
         auto client = node_->create_client<rm_interfaces::srv::GetCameraInfo>(
-            camera_name_, rmw_qos_profile_services_default, callback_group);
+            camera_name_ + "/get_camera_info", rmw_qos_profile_services_default, callback_group);
         exec->add_callback_group(callback_group, node_->get_node_base_interface());
 
         while (!client->wait_for_service(std::chrono::seconds(1)))
