@@ -27,8 +27,7 @@ namespace rm_cam
         CamParam::Fps,
         CamParam::RGain,
         CamParam::GGain,
-        CamParam::BGain
-    };
+        CamParam::BGain};
 
     constexpr const char *kCamParamTypeNames[] = {
         "width",
@@ -46,8 +45,7 @@ namespace rm_cam
         "fps",
         "Rgain",
         "Ggain",
-        "Bgain"
-    };
+        "Bgain"};
 
     CamServer::CamServer(
         rclcpp::Node::SharedPtr node,
@@ -149,15 +147,20 @@ namespace rm_cam
         if (cam_interface_->grab_img(img_, time_stamp_ms_))
         {
             auto header = std_msgs::msg::Header();
-            header.stamp.sec = static_cast<int32_t>(time_stamp_ms_ * 0.001);
-            header.stamp.nanosec = static_cast<uint32_t>((time_stamp_ms_ - (header.stamp.sec * 1000)) * 0.000001);
+            header.stamp = rclcpp::Time();
 
             // publish image msg
-            sensor_msgs::msg::Image::SharedPtr img_msg = cv_bridge::CvImage(
-                                                             header, "bgr8", img_)
-                                                             .toImageMsg();
 
-            img_pub_->publish(*img_msg);
+            // use loaned message
+            auto img_msg = img_pub_->borrow_loaned_message();
+            cv_bridge::CvImage(header, "bgr8", img_).toImageMsg(img_msg.get());
+            img_pub_->publish(std::move(img_msg));
+
+            // default message
+            // sensor_msgs::msg::Image::SharedPtr img_msg = cv_bridge::CvImage(
+            //                                                  header, "bgr8", img_)
+            //                                                  .toImageMsg();
+            // img_pub_->publish(*img_msg);
         }
         else
         {
