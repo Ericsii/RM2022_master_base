@@ -177,13 +177,14 @@ namespace rm_cam
             );
         }
 
-        // 读取帧 超时100ms
-        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 20);
+        // 读取帧 超时1000ms
+        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 1000);
         if (status != CAMERA_STATUS_SUCCESS)
         {
+            CameraReleaseImageBuffer(hCamera_, pFrameBuffer_);
             RCLCPP_WARN(
                 node_->get_logger(),
-                "Frame read failed!"
+                "ERROR [%d] - Frame read failed!", status
             );
         }
 
@@ -230,10 +231,11 @@ namespace rm_cam
             );
         }
 
-        // 读取帧 超时100ms
-        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 100);
+        // 读取帧 超时1000ms
+        status = CameraGetImageBuffer(hCamera_, &header, &pFrameBuffer_, 1000);
         if (status != CAMERA_STATUS_SUCCESS)
         {
+            CameraReleaseImageBuffer(hCamera_, pFrameBuffer_);
             RCLCPP_WARN(
                 node_->get_logger(),
                 "ERROR [%d] - Frame read failed!", status

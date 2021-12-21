@@ -163,7 +163,7 @@ namespace rm_cam
         {
             // try to reopen camera
             using namespace std::chrono_literals;
-            if (reopen_cnt_ % fps_ == 0)
+            if (reopen_cnt_ % 5 == 0)
             {
                 cam_interface_->close();
                 std::this_thread::sleep_for(100ms);
