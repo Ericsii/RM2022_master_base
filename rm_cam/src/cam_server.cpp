@@ -147,7 +147,7 @@ namespace rm_cam
         if (cam_interface_->grab_img(img_, time_stamp_ms_))
         {
             auto header = std_msgs::msg::Header();
-            header.stamp = rclcpp::Time();
+            header.stamp = rclcpp::Clock().now();
 
             // publish image msg
 
