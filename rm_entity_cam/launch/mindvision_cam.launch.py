@@ -15,7 +15,6 @@ def generate_launch_description():
         parameters=[param_path],
         output='screen'
     )
-
     ld = LaunchDescription()
     ld.add_action(mv_cam_node)
 

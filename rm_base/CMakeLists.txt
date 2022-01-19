@@ -11,7 +11,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
- add_definitions("-DDEBUG_MODE")
+ add_definitions("-DRM_DEBUG_MODE")
 endif()
 
 # find dependencies
@@ -29,11 +29,8 @@ include_directories(include)
 add_library(${PROJECT_NAME} SHARED
   src/transporter_driver/uart_transporter.cpp
   src/simple_robot_base_node.cpp
+  src/robot_base_node.cpp
 )
-
-#  src/TEST_mode_get_client.cpp
-# src/TEST_subscribtion_node.cpp
-
 
 set(dependencies
     rclcpp
@@ -51,14 +48,9 @@ ament_export_dependencies(${dependencies})
 # SimpelRobotBase入口
 add_executable(simple_robot_base src/simple_robot_base_main.cpp)
 target_link_libraries(simple_robot_base ${PROJECT_NAME})
-
-# #server test入口
-# add_executable(get_mode_client src/TEST_mode_get_client.cpp)
-# target_link_libraries(get_mode_client ${PROJECT_NAME})
-
-#subscriber test入口
-# add_executable(subscriber src/TEST_subscribtion_node.cpp)
-# target_link_libraries(subscriber ${PROJECT_NAME})
+# RobotBase入口
+add_executable(robot_base src/robot_base_main.cpp)
+target_link_libraries(robot_base ${PROJECT_NAME})
 
 install(
   DIRECTORY include/
@@ -74,14 +66,9 @@ install(TARGETS ${PROJECT_NAME}
 install(TARGETS simple_robot_base
   DESTINATION lib/${PROJECT_NAME}
 )
-
-# #test server/subscriber
-# install(TARGETS get_mode_client
-#   DESTINATION lib/${PROJECT_NAME}
-# )
-# install(TARGETS subscriber
-#  DESTINATION lib/${PROJECT_NAME}
-# )
+install(TARGETS robot_base
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(
   DIRECTORY launch
@@ -90,6 +77,7 @@ install(
 
 # register component nodes
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_base::SimpleRobotBaseNode")
+rclcpp_components_register_nodes(${PROJECT_NAME} "rm_base::RobotBaseNode")
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
