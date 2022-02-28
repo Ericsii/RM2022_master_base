@@ -23,20 +23,31 @@
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
-|yaw|目标yaw|float32【5-8】|
-|pitch|目标pitch|float32【9-12】|
+|cmd|自瞄模式（小陀螺、吊射、打哨兵）|unsigned char【5】|
+|shoot|建议发弹量|unsigned char【6】|
+|yaw|目标yaw|float32【7-10】|
+|pitch|目标pitch|float32【11-14】|
 |【UA】yaw_v|yaw角速度|float32【13-16】|
 |【UA】pitch_v|pitch角速度|float32【17-20】|
-|【UA】shoot|是否射击|int32【21-24】|
+
 - 2.哨兵帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
 |cmd|哨兵状态（自瞄、巡逻）|unsigned char【5】|
+|shoot|发弹量|unsigned char【6】|
 |yaw|目标yaw|float32【6-9】|
 |pitch|目标pitch|float32【10-13】|
 |shoot|是否射击|int32【21-24】|
+
+- 3.时间戳同步帧(下位机接收到同步帧后原封不动返回)
+
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|下位机帧编号|int32【1-4】1-10，同步10次取平均|
+|cmd|0xe1|unsigned char【5】|
+|time_stamp|时间戳|float64/double【6-13】|
 
 ### **下位机->上位机** 
 
@@ -45,7 +56,7 @@
 |变量名|帧种类|数据|
 |-|-|-|
 |ChangeMode|模式帧|0xa1|
-|ChangeShootSpeed|射速帧|0xb1|
+|GetShootSpeed|射速帧|0xb1|
 |ChangeColor|颜色帧|0xc1|
 |GimbalAngleControl|姿态帧|0xd1|
 - 1.模式帧
@@ -55,6 +66,8 @@
 |tid|下位机帧编号|int32【1-4】4294967295-10|
 |cmd|0xa1|unsigned char【5】|
 |mode|战斗模式|unsigned char【6】:（自瞄 : 0xaa、 小符: 0xbb、 大符： 0xcc、手动: 0xee）|
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+
 - 2.射速帧
 
 |数据|说明|type(数据位)|
@@ -62,6 +75,8 @@
 |tid|下位机帧编号|int32【1-4】4294967295-9|
 |cmd|0xb1|unsigned char【5】|
 |velocity|子弹发射速度|int32【6-9】|
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+
 - 3.（我方）颜色帧
 
 |数据|说明|type(数据位)|
@@ -69,14 +84,23 @@
 |tid|下位机帧编号|int32【1-4】4294967295-8|
 |cmd|0xc1|unsigned char【5】|
 |color|我方颜色|unsigned char【6】:（red : 0x1c/ blue : 0xbc）|
-- 4.姿态帧
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+
+- 4.纯姿态帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|下位机帧编号|int32【1-4】0~(4294967295-10)|
 |cmd|0xd1|unsigned char【5】|
-|GyroQuaternions|当前姿态四元数 |float32 ：Q1【6-9】Q2【10-13】Q3【14-17】Q4【18-21】|
-|time_stamp|时间戳|float64/double【22-29】|
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+
+- 5.时间戳同步帧(下位机接收到同步帧后原封不动返回)
+
+|数据|说明|type(数据位)|
+|-|-|-| 
+|tid|下位机帧编号|int32【1-4】1-10，同步10次取平均|
+|cmd|0xe1|unsigned char【5】|
+|time_stamp|时间戳|float64/double【6-13】|
 
 ## 环境搭建
 ### 1.安装ROS2（https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html） ，安装desktop版本
@@ -113,7 +137,10 @@ serial_name：使用的串口名，serial_send：串口发送，serial_recv：�
                 {"serial_send": True},
                 {"serial_recv": True}
 ```
-  开启接收发送
+  开启DEBUG模式，接收发送
+```
+colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+```
 
 # 测试
 结点启动终端：
@@ -136,7 +163,9 @@ ros2 run rm_base simple_robot_base --ros-args --remap __node:=recv
 ```
 
 ## 权限（每次串口插拔或者是ubuntu系统休眠都需要重新给权限）
-sudo chmod +777 /dev/tty
+如果遇到找不到串口的错误，可以先ls /dev找到对应串口名（一般为/dev/ttyUSB或者ttyACM）
+
+然后给权限 ```sudo chmod +777 /dev/ttyxxx```
 
 
 
@@ -188,4 +217,5 @@ bps = 115200
 ## 11/18 联调
 上位机发-->下位机解、发-->上位机解，
  **1152000** 波特率延迟能到达 **1 ms** 左右
- 不稳定，在800us-2000us波动（一次发收400-1000us）较为合理，但表明有丢包现象
+ 不稳定，在800us-2000us波动（一次发收400-1000us）
+ 较为合理，但表明有丢包现象

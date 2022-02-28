@@ -25,11 +25,11 @@ namespace rm_cam
         if (best_effort_qos)
         {
             // 图像传输配置
-            rclcpp::QoS img_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
+            rclcpp::QoS img_sub_qos_profile(rclcpp::KeepLast(2), best_effort_qos_policy);
             img_sub_.subscribe(node_, camera_name_ + "/image_raw", img_sub_qos_profile.get_rmw_qos_profile());
 
             // imu传输QoS配置
-            rclcpp::QoS imu_sub_qos_profile(rclcpp::KeepLast(10), best_effort_qos_policy);
+            rclcpp::QoS imu_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             imu_sub_.subscribe(node_, imu_name_, imu_sub_qos_profile.get_rmw_qos_profile());
         }
         else
@@ -75,8 +75,7 @@ namespace rm_cam
             }
             RCLCPP_INFO(
                 node_->get_logger(),
-                "[get_camera_info] Trying to get camera info."
-            );
+                "[get_camera_info] Trying to get camera info.");
         }
         auto request = std::make_shared<rm_interfaces::srv::GetCameraInfo::Request>();
         auto result_future = client->async_send_request(request);
@@ -102,7 +101,21 @@ namespace rm_cam
         }
     }
 
-    void WrapperClient::start() { run_flag_ = true; }
+    void WrapperClient::start()
+    {
+        RCLCPP_INFO(
+            node_->get_logger(),
+            "Client start."
+        );
+        run_flag_ = true;
+    }
 
-    void WrapperClient::stop() { run_flag_ = false; }
+    void WrapperClient::stop()
+    {
+        RCLCPP_INFO(
+            node_->get_logger(),
+            "Client stop."
+        );
+        run_flag_ = false;
+    }
 } // namespace rm_cam

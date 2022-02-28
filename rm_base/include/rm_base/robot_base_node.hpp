@@ -1,5 +1,5 @@
-#ifndef RM_BASE__SIMPLE_ROBOT_BASE_NODE_HPP_
-#define RM_BASE__SIMPLE_ROBOT_BASE_NODE_HPP_
+#ifndef RM_BASE__INFANTRY_BASE_NODE_HPP_
+#define RM_BASE__INFANTRY_BASE_NODE_HPP_
 
 #include <thread>
 #include <memory>
@@ -17,10 +17,10 @@
 
 namespace rm_base
 {
-    class SimpleRobotBaseNode
+    class RobotBaseNode
     {
     public:
-        explicit SimpleRobotBaseNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+        explicit RobotBaseNode(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
 
         rclcpp::node_interfaces::NodeBaseInterface::SharedPtr get_node_base_interface()
         {
@@ -104,7 +104,8 @@ namespace rm_base
         rclcpp::Time time_recv;
         double max_time = 0;
         double min_time = 10000.0;
-        double time_RTT[10]={0};
+        double time_RTT[100]={0};
+        int time_id = 0;
         int RTT_time = 0;
         double time_delay = 0;
         int drop_pkg = 0;
