@@ -9,7 +9,9 @@
 #include "std_msgs/msg/header.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "geometry_msgs/msg/quaternion.hpp"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
@@ -18,9 +20,9 @@
 namespace rm_cam
 {
     // 回调函数类
-    using DataCallBack = std::function<void(std_msgs::msg::Header, cv::Mat &, geometry_msgs::msg::Pose)>;
+    using DataCallBack = std::function<void(std_msgs::msg::Header, cv::Mat &, geometry_msgs::msg::Quaternion)>;
 
-    using ApproximatePolicy = message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, geometry_msgs::msg::PoseStamped>;
+    using ApproximatePolicy = message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Imu>;
 
     class WrapperClient
     {
@@ -62,8 +64,8 @@ namespace rm_cam
         void stop();
 
     private:
-        void data_cbk(const sensor_msgs::msg::Image::ConstSharedPtr img,
-                      const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose);
+        void data_cbk(sensor_msgs::msg::Image::ConstSharedPtr img,
+                      sensor_msgs::msg::Imu::ConstSharedPtr pose);
 
     private:
         rclcpp::Node::SharedPtr node_; // rclcpp 节点
@@ -73,7 +75,7 @@ namespace rm_cam
         bool run_flag_{false};         // 回调开关
 
         message_filters::Subscriber<sensor_msgs::msg::Image> img_sub_;           // 图像订阅
-        message_filters::Subscriber<geometry_msgs::msg::PoseStamped> imu_sub_;   // imu 订阅
+        message_filters::Subscriber<sensor_msgs::msg::Imu> imu_sub_;   // imu 订阅
         std::shared_ptr<message_filters::Synchronizer<ApproximatePolicy>> sync_; // 同步订阅器
     };
 } // namespace rm_auto_aim
