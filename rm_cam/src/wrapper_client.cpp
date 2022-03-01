@@ -42,14 +42,14 @@ namespace rm_cam
         sync_->registerCallback(std::bind(&WrapperClient::data_cbk, this, _1, _2));
     }
 
-    void WrapperClient::data_cbk(const sensor_msgs::msg::Image::ConstSharedPtr img,
-                                 const geometry_msgs::msg::PoseStamped::ConstSharedPtr pose)
+    void WrapperClient::data_cbk(sensor_msgs::msg::Image::ConstSharedPtr img,
+                                 sensor_msgs::msg::Imu::ConstSharedPtr pose)
     {
         if (run_flag_)
         {
             auto c_header = img->header;
             auto c_img = cv_bridge::toCvShare(img, "bgr8")->image.clone();
-            auto c_pose = pose->pose;
+            auto c_pose = pose->orientation;
             process_fn_(c_header, c_img, c_pose);
         }
     }
