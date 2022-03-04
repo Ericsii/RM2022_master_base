@@ -19,6 +19,7 @@ find_package(cv_bridge REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(rm_interfaces REQUIRED)
+find_package(camera_info_manager REQUIRED)
 
 # Include
 include_directories(include)
@@ -45,6 +46,7 @@ set(dependencies
     message_filters
     OpenCV
     rm_interfaces
+    camera_info_manager
 )
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)

@@ -52,6 +52,33 @@ namespace rm_cam
         std::shared_ptr<CamInterface> cam_interface)
         : node_(node), cam_interface_(cam_interface)
     {
+        std::string camera_name = "camera";
+        std::string camera_info_url = "";
+
+        // 定义ROS parameter获取相机参数
+        node_->declare_parameter("camera_name", camera_name);
+        node_->declare_parameter("best_effort_qos", false); 
+        node_->declare_parameter("camera_info_url", camera_info_url);
+        node_->get_parameter("camera_name", camera_name);
+        node_->get_parameter("camera_info_url", camera_info_url);
+
+        camera_info_manager_ = std::make_shared<cam_info_manager>(
+            node_.get(), camera_name, camera_info_url
+        );
+        if (camera_info_manager_->loadCameraInfo(camera_info_url))
+        {
+            RCLCPP_INFO(
+                node_->get_logger(),
+                "Load camera info from url: '%s'", camera_info_url.c_str()
+            );
+        }
+        else {
+            RCLCPP_WARN(
+                node_->get_logger(),
+                "Camera info url '%s' is not found!", camera_info_url.c_str()
+            );
+        }
+
         int data;
         constexpr int param_num = sizeof(kCamParamTypes) / sizeof(CamParam);
         for (int i = 0; i < param_num; ++i)
@@ -81,34 +108,7 @@ namespace rm_cam
             cam_interface_->set_parameter(CamParam::Fps, 30);
         }
 
-        std::string camera_name = "camera";
-
-        // 定义ROS parameter获取相机参数
-        node_->declare_parameter("camera_name", camera_name);
-        node_->declare_parameter("camera_k", camera_k_);
-        node_->declare_parameter("camera_p", camera_p_);
-        node_->declare_parameter("camera_d", camera_d_);
-        node_->get_parameter("camera_name", camera_name);
-        node_->get_parameter("camera_k", camera_k_);
-        node_->get_parameter("camera_p", camera_p_);
-        node_->get_parameter("camera_d", camera_d_);
-
-        // check parameters
-        if (camera_k_.size() != 9)
-        {
-            RCLCPP_ERROR(
-                node_->get_logger(),
-                "The size of camera intrinsic parameter(%ld) != 9", camera_k_.size());
-        }
-        if (camera_p_.size() != 12)
-        {
-            RCLCPP_ERROR(
-                node_->get_logger(),
-                "The size of camera intrinsic parameter(%ld) != 12", camera_p_.size());
-        }
-
         // 自定义QoS
-        node_->declare_parameter("best_effort_qos", false);
         auto custom_qos = node_->get_parameter("best_effort_qos").as_bool();
 
         // create image publisher
@@ -127,9 +127,16 @@ namespace rm_cam
                 1);
         }
 
+        info_pub_ = node_->create_publisher<sensor_msgs::msg::CameraInfo>(
+            camera_name + "/camera_info",
+            5
+        );
+
         // publisher timer
         auto period_ms = std::chrono::milliseconds(static_cast<int64_t>(1000. / fps_));
         timer_ = node_->create_wall_timer(period_ms, std::bind(&CamServer::timer_callback, this));
+        period_ms = std::chrono::milliseconds(1000);
+        cam_info_timer_ = node_->create_wall_timer(period_ms, std::bind(&CamServer::cam_info_timer_callback, this));
 
         // create CameraInfo service
         using namespace std::placeholders;
@@ -140,6 +147,11 @@ namespace rm_cam
         RCLCPP_INFO(
             node_->get_logger(),
             "Camera server init finished.");
+    }
+
+    void CamServer::cam_info_timer_callback()
+    {
+        info_pub_->publish(camera_info_manager_->getCameraInfo());
     }
 
     void CamServer::timer_callback()
@@ -195,21 +207,11 @@ namespace rm_cam
         (void)request_header;
         (void)request;
 
-        auto &camera_info = response->camera_info;
-        int data;
-        cam_interface_->get_parameter(rm_cam::CamParam::Height, data);
-        camera_info.height = data;
-        cam_interface_->get_parameter(rm_cam::CamParam::Width, data);
-        camera_info.width = data;
-        if (camera_k_.size() == 9 && camera_p_.size() == 12)
+        if (camera_info_manager_->isCalibrated())
         {
-            std::copy_n(camera_k_.begin(), 9, camera_info.k.begin());
-            std::copy_n(camera_p_.begin(), 12, camera_info.p.begin());
-            camera_info.d = camera_d_;
-            response->success = true;
+            response->camera_info = camera_info_manager_->getCameraInfo();
         }
-        else
-        {
+        else {
             response->success = false;
         }
     }

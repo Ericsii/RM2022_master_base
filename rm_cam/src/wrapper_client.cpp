@@ -38,8 +38,18 @@ namespace rm_cam
             imu_sub_.subscribe(node_, imu_name_);
         }
 
+        caminfo_sub_ = node_->create_subscription<sensor_msgs::msg::CameraInfo>(camera_name_ + "/camera_info", 10, std::bind(&WrapperClient::cam_info_cbk, this, _1));
         sync_ = std::make_shared<message_filters::Synchronizer<ApproximatePolicy>>(ApproximatePolicy(5), img_sub_, imu_sub_);
         sync_->registerCallback(std::bind(&WrapperClient::data_cbk, this, _1, _2));
+    }
+
+    void WrapperClient::cam_info_cbk(sensor_msgs::msg::CameraInfo::ConstSharedPtr caminfo)
+    {
+        if (!read_info_)
+        {
+            cam_info_ = *caminfo;
+            read_info_ = true;
+        }
     }
 
     void WrapperClient::data_cbk(sensor_msgs::msg::Image::ConstSharedPtr img,
@@ -57,46 +67,37 @@ namespace rm_cam
     bool WrapperClient::get_camera_info(sensor_msgs::msg::CameraInfo &info)
     {
         using namespace std::chrono_literals;
-        auto callback_group = node_->create_callback_group(
-            rclcpp::CallbackGroupType::MutuallyExclusive, false);
-        auto exec = std::make_shared<rclcpp::executors::SingleThreadedExecutor>();
-        auto client = node_->create_client<rm_interfaces::srv::GetCameraInfo>(
-            camera_name_ + "/get_camera_info", rmw_qos_profile_services_default, callback_group);
-        exec->add_callback_group(callback_group, node_->get_node_base_interface());
+        auto start = node_->now();
 
-        while (!client->wait_for_service(std::chrono::seconds(1)))
+        while (!read_info_)
         {
+            std::this_thread::sleep_for(200ms);
             if (!rclcpp::ok())
             {
                 RCLCPP_ERROR(
                     node_->get_logger(),
-                    "[get_camera_info] client interrupted!");
+                    "[get_camera_info] Client interrupted!");
                 return false;
+            }
+            if ((node_->now() - start).seconds() > 5.0)
+            {
+                break;
             }
             RCLCPP_INFO(
                 node_->get_logger(),
                 "[get_camera_info] Trying to get camera info.");
         }
-        auto request = std::make_shared<rm_interfaces::srv::GetCameraInfo::Request>();
-        auto result_future = client->async_send_request(request);
-        if (exec->spin_until_future_complete(result_future, 5s) !=
-            rclcpp::FutureReturnCode::SUCCESS)
-        {
-            RCLCPP_ERROR(
-                node_->get_logger(),
-                "[get_camera_info] service timeout!");
-            return false;
-        }
 
-        auto result = result_future.get();
-        if (result->success)
+        if (read_info_)
         {
-            info = result->camera_info;
+            info = cam_info_;
             return true;
         }
         else
         {
-            RCLCPP_ERROR(node_->get_logger(), "[get_camera_info] service call failed.");
+            RCLCPP_ERROR(
+                node_->get_logger(),
+                "[get_camera_info] Timeout!");
             return false;
         }
     }
@@ -105,8 +106,7 @@ namespace rm_cam
     {
         RCLCPP_INFO(
             node_->get_logger(),
-            "Client start."
-        );
+            "Client start.");
         run_flag_ = true;
     }
 
@@ -114,8 +114,7 @@ namespace rm_cam
     {
         RCLCPP_INFO(
             node_->get_logger(),
-            "Client stop."
-        );
+            "Client stop.");
         run_flag_ = false;
     }
 } // namespace rm_cam

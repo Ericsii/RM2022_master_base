@@ -10,7 +10,6 @@
 #include "sensor_msgs/msg/image.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/imu.hpp"
-#include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/subscriber.h"
@@ -31,7 +30,7 @@ namespace rm_cam
 
         /**
          * @brief Construct a new Wrapper Client object
-         * 
+         *
          * @param node rclcpp节点
          * @param camera_name 相机topic名称
          * @param imu_name imu topic名称
@@ -46,20 +45,20 @@ namespace rm_cam
 
         /**
          * @brief Get the camera info object
-         * 
+         *
          * @param info 返回的camera info
          */
         bool get_camera_info(sensor_msgs::msg::CameraInfo &info);
 
         /**
          * @brief 开启回调处理
-         * 
+         *
          */
         void start();
 
         /**
          * @brief 关闭回调处理
-         * 
+         *
          */
         void stop();
 
@@ -67,16 +66,21 @@ namespace rm_cam
         void data_cbk(sensor_msgs::msg::Image::ConstSharedPtr img,
                       sensor_msgs::msg::Imu::ConstSharedPtr pose);
 
-    private:
-        rclcpp::Node::SharedPtr node_; // rclcpp 节点
-        std::string camera_name_;      // 相机 topic 名称
-        std::string imu_name_;         // IMU topic 名称
-        DataCallBack process_fn_;      // 回调函数
-        bool run_flag_{false};         // 回调开关
+        void cam_info_cbk(sensor_msgs::msg::CameraInfo::ConstSharedPtr caminfo);
 
-        message_filters::Subscriber<sensor_msgs::msg::Image> img_sub_;           // 图像订阅
-        message_filters::Subscriber<sensor_msgs::msg::Imu> imu_sub_;   // imu 订阅
-        std::shared_ptr<message_filters::Synchronizer<ApproximatePolicy>> sync_; // 同步订阅器
+    private:
+        rclcpp::Node::SharedPtr node_;     // rclcpp 节点
+        std::string camera_name_;          // 相机 topic 名称
+        std::string imu_name_;             // IMU topic 名称
+        DataCallBack process_fn_;          // 回调函数
+        bool run_flag_{false};             // 回调开关
+        bool read_info_{false};            // 相机 info 读取标志
+        sensor_msgs::msg::CameraInfo cam_info_; // 相机参数
+
+        rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr caminfo_sub_; // 相机参数订阅
+        message_filters::Subscriber<sensor_msgs::msg::Image> img_sub_;              // 图像订阅
+        message_filters::Subscriber<sensor_msgs::msg::Imu> imu_sub_;                // imu 订阅
+        std::shared_ptr<message_filters::Synchronizer<ApproximatePolicy>> sync_;    // 同步订阅器
     };
 } // namespace rm_auto_aim
 
