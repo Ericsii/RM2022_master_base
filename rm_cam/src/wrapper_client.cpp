@@ -18,6 +18,8 @@ namespace rm_cam
     {
         using std::placeholders::_1;
         using std::placeholders::_2;
+        caminfo_sub_ = node_->create_subscription<sensor_msgs::msg::CameraInfo>(camera_name_ + "/camera_info", 10, std::bind(&WrapperClient::cam_info_cbk, this, _1));
+
 
         node_->declare_parameter("best_effort_qos", false);
         auto best_effort_qos = node_->get_parameter("best_effort_qos").as_bool();
