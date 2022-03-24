@@ -149,6 +149,9 @@ install/
 log/
 build/
 
+### TETT ###
+rm_base/test
+
 # Ignore generated docs
 *.dox
 *.wikidoc
@@ -197,3 +200,4 @@ AMENT_IGNORE
 !**/dependencies/**
 
 *.avi
+*.mp4

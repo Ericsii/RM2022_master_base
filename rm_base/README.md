@@ -4,7 +4,7 @@
 
 定义通信协议，为上位机（nx/nuc）与下位机（stm32）的串口通信提供ROS节点。
 ## 环境 
-- ROS2-galactic, CMake>3.8, Ubuntu 20.04
+- ROS2-galactic, CMake 3.8, gcc 9.4.0, Ubuntu 20.04
 
 ## 包格式:
 - 32位包格式:
@@ -23,31 +23,26 @@
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
-|cmd|自瞄模式（小陀螺、吊射、打哨兵）|unsigned char【5】|
-|shoot|建议发弹量|unsigned char【6】|
-|yaw|目标yaw|float32【7-10】|
-|pitch|目标pitch|float32【11-14】|
-|【UA】yaw_v|yaw角速度|float32【13-16】|
-|【UA】pitch_v|pitch角速度|float32【17-20】|
+|yaw|偏移yaw|float32【7-10】|
+|pitch|偏移pitch|float32【11-14】|
 
 - 2.哨兵帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
-|cmd|哨兵状态（自瞄、巡逻）|unsigned char【5】|
-|shoot|发弹量|unsigned char【6】|
-|yaw|目标yaw|float32【6-9】|
-|pitch|目标pitch|float32【10-13】|
-|shoot|是否射击|int32【21-24】|
+|type|哨兵状态（0x2a自瞄,0x3a巡逻,0x4a遥控器）|unsigned char【5】|
+|shoot|发弹 0x4b发射|unsigned char【6】|
+|yaw|偏移yaw|float32【6-9】|
+|pitch|偏移pitch|float32【10-13】|
 
-- 3.时间戳同步帧(下位机接收到同步帧后原封不动返回)
+<!-- - 3.(不需要使用)时间戳同步帧(下位机接收到同步帧后原封不动返回)
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|下位机帧编号|int32【1-4】1-10，同步10次取平均|
 |cmd|0xe1|unsigned char【5】|
-|time_stamp|时间戳|float64/double【6-13】|
+|time_stamp|时间戳|float64/double【6-13】| -->
 
 ### **下位机->上位机** 
 
@@ -58,15 +53,15 @@
 |ChangeMode|模式帧|0xa1|
 |GetShootSpeed|射速帧|0xb1|
 |ChangeColor|颜色帧|0xc1|
-|GimbalAngleControl|姿态帧|0xd1|
+<!-- |GimbalAngleControl|姿态帧|0xd1| -->
 - 1.模式帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|下位机帧编号|int32【1-4】4294967295-10|
 |cmd|0xa1|unsigned char【5】|
-|mode|战斗模式|unsigned char【6】:（自瞄 : 0xaa、 小符: 0xbb、 大符： 0xcc、手动: 0xee）|
-|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+|mode|战斗模式|unsigned char【6】:（自瞄 : 0x01、 小符: 0xbb、 大符： 0xcc、手动: 0x00）|
+<!-- |GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】| -->
 
 - 2.射速帧
 
@@ -75,7 +70,7 @@
 |tid|下位机帧编号|int32【1-4】4294967295-9|
 |cmd|0xb1|unsigned char【5】|
 |velocity|子弹发射速度|int32【6-9】|
-|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+<!-- |GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】| -->
 
 - 3.（我方）颜色帧
 
@@ -84,23 +79,24 @@
 |tid|下位机帧编号|int32【1-4】4294967295-8|
 |cmd|0xc1|unsigned char【5】|
 |color|我方颜色|unsigned char【6】:（red : 0x1c/ blue : 0xbc）|
-|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+<!-- |GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】| -->
 
-- 4.纯姿态帧
+<!-- 已替换为独立陀螺仪IMU
+ - 4.纯姿态帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|下位机帧编号|int32【1-4】0~(4294967295-10)|
 |cmd|0xd1|unsigned char【5】|
-|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】|
+|GyroQuaternions|当前姿态四元数 |float32 ：Q1【14-17】Q2【18-21】Q3【22-25】Q4【26-29】| -->
 
-- 5.时间戳同步帧(下位机接收到同步帧后原封不动返回)
+<!-- - 5.时间戳同步帧(下位机接收到同步帧后原封不动返回)
 
 |数据|说明|type(数据位)|
 |-|-|-| 
 |tid|下位机帧编号|int32【1-4】1-10，同步10次取平均|
 |cmd|0xe1|unsigned char【5】|
-|time_stamp|时间戳|float64/double【6-13】|
+|time_stamp|时间戳|float64/double【6-13】| -->
 
 ## 环境搭建
 ### 1.安装ROS2（https://docs.ros.org/en/galactic/Installation/Ubuntu-Install-Debians.html） ，安装desktop版本
@@ -108,18 +104,16 @@
 ``` shell
 echo 'source /opt/ros/galactic/setup.bash' >> ~/.bashrc
 
-mkdir -p ~/rm_ros/scu_rm_ros
-cd ~/rm_ros/scu_rm_ros
+mkdir -p ~/XXX/scu_rm_ros
+cd ~/XXX/scu_rm_ros
 
-  1--git clone git@e.coding.net:scurm/2022-vision/master-base.git 
-  或者直接解压master-base.zip包
-  2--将文件夹直接改名为src
+git clone git@e.coding.net:scurm/2022-vision/master-base.git 
+(或者直接解压master-base.zip包)
 
-cd ~/rm_ros/scu_rm_ros 
-colcon build
+colcon build --symlink-install
 ```
 
-## 在launch文件中修改node参数
+## 在launch文件中启动node，在yaml文件中修改参数param
 serial_name：使用的串口名，serial_send：串口发送，serial_recv：串口接收
 
 ·默认           
@@ -162,10 +156,11 @@ ros2 run rm_base simple_robot_base --ros-args --remap __node:=recv
 
 ```
 
-## 权限（每次串口插拔或者是ubuntu系统休眠都需要重新给权限）
+## 使用udev给与USB设备永久权限
+参考链接 https://blog.csdn.net/m0_38144614/article/details/121297159
+（否则每次串口硬件插拔或者是ubuntu系统休眠都需要重新给权限
 如果遇到找不到串口的错误，可以先ls /dev找到对应串口名（一般为/dev/ttyUSB或者ttyACM）
-
-然后给权限 ```sudo chmod +777 /dev/ttyxxx```
+然后给权限 ```sudo chmod +777 /dev/ttyxxx```）
 
 
 
@@ -219,3 +214,35 @@ bps = 115200
  **1152000** 波特率延迟能到达 **1 ms** 左右
  不稳定，在800us-2000us波动（一次发收400-1000us）
  较为合理，但表明有丢包现象
+
+
+
+        // x.push_back(position3d(0,0));
+        // y.push_back(position3d(1,0));
+        // z.push_back(position3d(2,0));
+        
+        // if(x.size() >= 20)
+        // {
+        //     double x_all = 0;
+        //     double y_all = 0;
+        //     double z_all = 0;
+        //     for(int i=0;i<x.size();i++)
+        //     {
+        //         x_all += x[i];
+        //         y_all += y[i];
+        //         z_all += z[i];
+        //     }
+        //     double x_all_t = 0;
+        //     double y_all_t = 0;
+        //     double z_all_t = 0;
+        //     for(int i=0;i<x.size();i++)
+        //     {
+        //         x_all_t += (x[i] - x_all/x.size())*(x[i] - x_all/x.size());
+        //         y_all_t += (y[i] - y_all/x.size())*(y[i] - y_all/x.size());
+        //         z_all_t += (z[i] - z_all/x.size())*(z[i] - z_all/x.size());
+        //     }
+        //     double x_off = x_all_t/x.size();
+        //     double y_off = y_all_t/x.size();
+        //     double z_off = z_all_t/x.size();
+        //     RCLCPP_INFO(node_->get_logger(),"\n\n\n\n\n x_off: %f, y_off: %f, z_off: %f \n\n\n\n\n\n", x_off ,y_off ,z_off);
+        // }

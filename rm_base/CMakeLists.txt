@@ -21,6 +21,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(rm_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rm_util REQUIRED)
 
 # Include
 include_directories(include)
@@ -28,7 +29,6 @@ include_directories(include)
 # Create rm_base lib
 add_library(${PROJECT_NAME} SHARED
   src/transporter_driver/uart_transporter.cpp
-  src/simple_robot_base_node.cpp
   src/robot_base_node.cpp
 )
 
@@ -38,6 +38,7 @@ set(dependencies
     rm_interfaces
     geometry_msgs
     std_msgs
+    rm_util
 )
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})
 ament_export_targets(${PROJECT_NAME} HAS_LIBRARY_TARGET)
@@ -45,9 +46,6 @@ ament_export_dependencies(${dependencies})
 
 
 # 创建入口
-# SimpelRobotBase入口
-add_executable(simple_robot_base src/simple_robot_base_main.cpp)
-target_link_libraries(simple_robot_base ${PROJECT_NAME})
 # RobotBase入口
 add_executable(robot_base src/robot_base_main.cpp)
 target_link_libraries(robot_base ${PROJECT_NAME})
@@ -63,20 +61,16 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION lib
   INCLUDES DESTINATION lib
 )
-install(TARGETS simple_robot_base
-  DESTINATION lib/${PROJECT_NAME}
-)
 install(TARGETS robot_base
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(
-  DIRECTORY launch
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
 # register component nodes
-rclcpp_components_register_nodes(${PROJECT_NAME} "rm_base::SimpleRobotBaseNode")
 rclcpp_components_register_nodes(${PROJECT_NAME} "rm_base::RobotBaseNode")
 
 if(BUILD_TESTING)

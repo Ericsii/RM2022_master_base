@@ -8,10 +8,10 @@ def generate_launch_description():
             package='rm_base',
             # namespace='rm_base',
             executable='simple_robot_base',
-            name = 'nahsor_test',
+            name = 'sentry',
             output = 'screen',  
             parameters=[
-                {"serial_name": "/dev/ttyUSB2"},
+                {"serial_name": "/dev/ttyUSB1"},
                 {"serial_send": True},
                 {"serial_recv": False},
                 {"serial_bps": 1152000},

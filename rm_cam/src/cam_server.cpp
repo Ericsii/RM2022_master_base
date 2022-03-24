@@ -210,6 +210,7 @@ namespace rm_cam
         if (camera_info_manager_->isCalibrated())
         {
             response->camera_info = camera_info_manager_->getCameraInfo();
+            response->success = true;
         }
         else {
             response->success = false;

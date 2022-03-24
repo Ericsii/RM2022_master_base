@@ -10,6 +10,8 @@
 #include <iostream>
 #include <vector>
 
+using namespace std::chrono_literals;
+
 namespace rm_base
 {
     namespace frame_type
@@ -20,7 +22,6 @@ namespace rm_base
             GetShootSpeed = 0xb1,
             ChangeColor = 0xc1,
             GimbalAngleControl = 0xd1,
-            TimeStampSyn = 0xe1
         } frame_type;
     }
 
@@ -62,45 +63,37 @@ namespace rm_base
             //串口传输Qos配置
             rclcpp::QoS cmd_gimbal_sub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
             rclcpp::QoS shoot_speed_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
-            rclcpp::QoS pose_stamped_pub_qos_profile(rclcpp::KeepLast(1), best_effort_qos_policy);
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                "/cmd_gimbal",
+                "cmd_gimbal",
                 cmd_gimbal_sub_qos_profile,
                 std::bind(&RobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1));
             //topic发布：shoot_speed, 真实射速发布
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
-                "/shoot_speed",
+                "shoot_speed",
                 shoot_speed_pub_qos_profile);
-            //topic发布：pose_stamped, 真实陀螺仪位姿与对应时间戳发布
-            pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-                "/pose_stamped",
-                pose_stamped_pub_qos_profile);
         }
         else
         {
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                "/cmd_gimbal",
+                "cmd_gimbal",
                 10,
                 std::bind(&RobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1));
             shoot_speed_pub_ = node_->create_publisher<rm_interfaces::msg::ShootSpeed>(
-                "/shoot_speed",
-                10);
-            pose_stamped_pub_ = node_->create_publisher<geometry_msgs::msg::PoseStamped>(
-                "/pose_stamped",
+                "shoot_speed",
                 10);
         }
 
         /*----------------------- Service ros服务 -----------------------*/
         //service服务端：获取模式
         get_mode_srv_ = node_->create_service<rm_interfaces::srv::GetMode>(
-            "/get_mode",
+            "get_mode",
             std::bind(&RobotBaseNode::ModeGet, this, std::placeholders::_1, std::placeholders::_2));
 
         //service服务端：获取颜色
         get_color_srv_ = node_->create_service<rm_interfaces::srv::GetColor>(
-            "/get_color",
+            "get_color",
             std::bind(&RobotBaseNode::ColorGet, this, std::placeholders::_1, std::placeholders::_2));
 
         //client客户端：设置击打模式
@@ -129,65 +122,28 @@ namespace rm_base
     //topic订阅返回函数：发送串口数据
     void RobotBaseNode::gimbal_cmd_cb(const rm_interfaces::msg::GimbalCmd::SharedPtr msg)
     {
-        if ((this->tid >= (2147483647 - 100)))
-            this->tid = 0;
-        this->tid++;
-        FixedPacket<32> packet;
-        packet.load_data<uint32_t>(this->tid, 1);
-        if ((this->tid % 100000) <= 10)
+        if (this->SerialSend)
         {
-            /** 时间同步
-                     * 1-4   tid  包编号
-                     * 5     0xe1 时间同步标志位
-                     * 
-                     * 7-10  yaw 
-                     * 11-14 pitch   */
-            packet.load_data<unsigned char>(frame_type::TimeStampSyn, 5);
+            if ((this->tid >= (2147483647 - 100)))
+                this->tid = 0;
+            this->tid++;
+            FixedPacket<32> packet;
+            packet.load_data<uint32_t>(this->tid, 1);
+
+            // ----将数据导入数据包中----//
+            // ----上位机->下位机----/
+            /** 哨兵、步兵、英雄
+             * sentry、infantry、hero
+             * 1-4  tid 包编号
+             * 5    type  巡逻、瞄准、开枪
+             * 6    shoot
+             * 5-8  yaw
+             * 9-12 pitch */
+            //（【5 type】0x2a自瞄,0x3a巡逻,0x4a遥控器 【6 shoot】0x4b发射）
+            packet.load_data<unsigned char>(msg->type, 5);
+            packet.load_data<unsigned char>(msg->shoot, 6);
             packet.load_data<float>(msg->position.yaw, 7);
             packet.load_data<float>(msg->position.pitch, 11);
-            this->time_send = rclcpp::Clock().now();
-            packet.load_data<double>(this->time_send.seconds(), 15);
-        }
-        else
-        {
-            if (this->SerialSend && (this->mode != 0xee))
-            {
-                //----将数据导入数据包中----//
-                //----上位机->下位机----/
-                if (this->node_name == "infantry" || this->node_name == "hero")
-                {
-                    /** 步兵 infantry
-                     * 1-4   tid 包编号
-                     * 7-10  yaw 
-                     * 11-14 pitch   */
-                    packet.load_data<float>(msg->position.yaw, 7);
-                    packet.load_data<float>(msg->position.pitch, 11);
-                }
-                else if (this->node_name == "sentry")
-                {
-                    /** 哨兵 sentry
-                     * 1-4  tid 包编号
-                     * 5    type  巡逻、瞄准、开枪
-                     * 6    shoot
-                     * 5-8  yaw 
-                     * 9-12 pitch */
-                    packet.load_data<unsigned char>(msg->type, 5);
-                    packet.load_data<unsigned char>(msg->shoot, 6);
-                    packet.load_data<float>(msg->position.yaw, 7);
-                    packet.load_data<float>(msg->position.pitch, 11);
-                    packet.load_data<double>(rclcpp::Clock().now().seconds(), 15);
-                }
-                else
-                {
-                    RCLCPP_INFO(node_->get_logger(), "Node Name %s Fail!", this->serial_name.c_str());
-                    packet.load_data<unsigned char>(msg->type, 5);
-                    packet.load_data<unsigned char>(msg->shoot, 6);
-                    packet.load_data<float>(msg->position.yaw, 7);
-                    packet.load_data<float>(msg->position.pitch, 11);
-                    this->time_send = rclcpp::Clock().now();
-                    packet.load_data<double>(rclcpp::Clock().now().seconds(), 15);
-                }
-            }
 
 #ifdef RM_DEBUG_MODE
             if (this->debug)
@@ -202,18 +158,18 @@ namespace rm_base
                 if (packet.unload_data(id, 1))
                     RCLCPP_INFO(node_->get_logger(), "SEND-ID: '%d'", id);
 
+                RCLCPP_INFO(node_->get_logger(), "SEND-NAMESPACE: %s", node_->get_namespace());
+
                 float pitch = 0;
                 float yaw = 0;
                 packet.unload_data<float>(yaw, 7);
                 packet.unload_data<float>(pitch, 11);
                 RCLCPP_INFO(node_->get_logger(), "pitch [%f]", pitch);
                 RCLCPP_INFO(node_->get_logger(), "yaw [%f]", yaw);
-                double timex;
-                packet.unload_data<double>(timex, 6);
-                RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'", timex);
+                RCLCPP_INFO(node_->get_logger(), "type [%d]", msg->type);
+                RCLCPP_INFO(node_->get_logger(), "shoot [%d]", msg->shoot);
             }
 #endif
-
             // 设置校验位字节（check_byte）为BCC校验码
             packet.set_check_byte();
             // 通过串口发送包到下位机
@@ -269,6 +225,7 @@ namespace rm_base
         uint32_t recv_tid = 0;
         while (rclcpp::ok())
         {
+            this->SerialRecv = node_->get_parameter("serial_recv").as_bool();
             if (this->SerialRecv)
             {
                 if (this->packet_tool_->recv_packet(packet))
@@ -284,27 +241,20 @@ namespace rm_base
 #ifdef RM_DEBUG_MODE
                     if (this->debug)
                     {
-                        float pitch = 0;
-                        float yaw = 0;
-                        packet.unload_data<float>(yaw, 7);
-                        packet.unload_data<float>(pitch, 11);
                         RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
-                        // RCLCPP_INFO(node_->get_logger(), "pitch [%f]", pitch);
-                        // RCLCPP_INFO(node_->get_logger(), "yaw [%f]", yaw);
                         RCLCPP_INFO(node_->get_logger(), "RECV-cmd: '%x'", cmd);
-                        this->time_recv = rclcpp::Clock().now();
-                        // double timer = rclcpp::Clock().now().seconds();
-                        // RCLCPP_INFO(node_->get_logger(),"recv[%d]: %f",recv_tid,timer);
                     }
 #endif
                     //---- 一、模式切换: mode【6】 ----//
                     if (cmd == (unsigned char)frame_type::ChangeMode)
                     {
-                        /*mode【6】:模式切换位 0xaa自瞄 0xbb小能量机关 0xcc大能量机关 0xee正常模式*/
+                        /*mode【6】:模式切换位 0x01自瞄 0xbb小能量机关 0xcc大能量机关 0xdd测试 0x00正常模式*/
                         unsigned char mode = 0x00;
                         packet.unload_data(mode, 6);
 
-                        if ((mode == 0x01) || (mode == 0x02) || (mode == 0xbb) || (mode == 0xcc))
+                        if(mode == 0xdd) mode = 0x01;
+
+                        if ((mode == 0x01) || (mode == 0x02) || (mode == 0xbb) || (mode == 0xcc) || (mode == 0xdd))
                         {
                             this->SerialSend = true; //开启发送部分，开始向下位机发送数据
                         }
@@ -315,33 +265,61 @@ namespace rm_base
                         else
                         {
                             this->SerialSend = false;
-                            RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
+                            RCLCPP_ERROR(node_->get_logger(), "【MODE %x ERROR】!!!", mode);
                         }
 
                         auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
-
                         //this->mode为上一状态模式
-                        if (this->mode != mode)
+                        if (mode != this->mode)
                         {
-                            if (mode < 0xaa)
+                            mode_change_id = 0;
+                            if (mode == 0x01 || mode == 0x02 || (mode == 0xdd))
                             {
                                 set_mode_rqt_->mode = mode;
-                                auto mode_set_result = set_autoaim_mode_cli_->async_send_request(set_mode_rqt_);
-
-                                while (!mode_set_result.get()->success)
+                                while (!set_autoaim_mode_cli_->wait_for_service(1s)) 
+                                {
+                                    RCLCPP_ERROR(node_->get_logger(), "Auto Aim Mode Change Service Not Available!!!");
+                                    if(mode_change_id++ >1000)
+                                    {
+                                        mode_change_id = 0;
+                                        break;
+                                    }
+                                }
+                                if (set_autoaim_mode_cli_->wait_for_service(1s))
+                                {
                                     auto mode_set_result = set_autoaim_mode_cli_->async_send_request(set_mode_rqt_);
+                                    while (!mode_set_result.get()->success)
+                                    {
+                                        RCLCPP_ERROR(node_->get_logger(), "Auto Aim Mode Change Fail!!!");
+                                        mode_set_result = set_autoaim_mode_cli_->async_send_request(set_mode_rqt_);
+                                    }
+                                }
                             }
-                            else
+                            else if (mode == 0xbb || mode == 0xcc)
                             {
                                 set_mode_rqt_->mode = mode;
-                                auto mode_set_result = set_nahsor_mode_cli_->async_send_request(set_mode_rqt_);
-
-                                while (!mode_set_result.get()->success)
+                                while (!set_nahsor_mode_cli_->wait_for_service(1s))
+                                {
+                                    RCLCPP_ERROR(node_->get_logger(), "Nahsor Mode Change Service Not Available!!!");
+                                    if (mode_change_id++ > 1000)
+                                    {
+                                        mode_change_id = 0;
+                                        break;
+                                    }
+                                }
+                                if (set_nahsor_mode_cli_->wait_for_service(1s))
+                                {
                                     auto mode_set_result = set_nahsor_mode_cli_->async_send_request(set_mode_rqt_);
+                                    while (!mode_set_result.get()->success)
+                                    {
+                                        RCLCPP_ERROR(node_->get_logger(), "Nahsor Mode Change Fail!!!");
+                                        mode_set_result = set_nahsor_mode_cli_->async_send_request(set_mode_rqt_);
+                                    }
+                                }
                             }
                         }
                         this->mode = mode;
-
+                        
 #ifdef RM_DEBUG_MODE
                         if (this->debug)
                         {
@@ -367,9 +345,6 @@ namespace rm_base
                             {
                                 RCLCPP_ERROR(node_->get_logger(), "【MODE】ERROR!!!");
                             }
-                            // auto mode_set_result = set_mode_cli_->async_send_request(set_mode_rqt_);
-                            // if(mode_set_result.get()->success)
-                            //     RCLCPP_INFO(node_->get_logger(), "Set Mode Success!");
                         }
 #endif
                     }
@@ -434,87 +409,6 @@ namespace rm_base
                         }
 #endif
                     }
-
-                    //---- 五、同步时间戳:  time_stamp【6-13】 ----//
-                    if (cmd == (unsigned char)frame_type::TimeStampSyn)
-                    {
-                        double send_time_stamp = 0.0;
-                        this->time_id++;
-                        packet.unload_data(send_time_stamp, 15);
-                        this->time_RTT[recv_tid % 100000] = rclcpp::Clock().now().seconds() - send_time_stamp;
-                        this->time_RTT[50] += this->time_RTT[recv_tid];
-                        time_RTT[0] = time_RTT[50] / this->time_id;
-                        if ((time_RTT[0] / 2) < 2)
-                            this->time_delay = time_RTT[0] / 2;
-#ifdef RM_DEBUG_MODE
-                        if (this->debug)
-                        {
-                            RCLCPP_INFO(node_->get_logger(), "time_RTT[%d]: %f", recv_tid, this->time_RTT[recv_tid]);
-                            RCLCPP_INFO(node_->get_logger(), "delay[%d]: %f", recv_tid, this->time_delay);
-                        }
-#endif
-                    }
-                    else
-                    {
-                        //---- 持续获取当前姿态:  Q1-Q4【14-17】【18-21】【22-25】【26-29】----//
-                        if (recv_tid <= this->last_tid)
-                            continue;
-
-                        std::array<float, 4UL> Q;
-                        double time_stamp = 0.0;
-                        packet.unload_data<float>(Q[0], 14);
-                        packet.unload_data<float>(Q[1], 18);
-                        packet.unload_data<float>(Q[2], 22);
-                        packet.unload_data<float>(Q[3], 26);
-
-                        time_stamp = rclcpp::Clock().now().seconds() - this->time_delay;
-                        geometry_msgs::msg::PoseStamped Pose_Stamped_msg;
-                        Pose_Stamped_msg.header.stamp.sec = static_cast<int32_t>(time_stamp);
-                        Pose_Stamped_msg.header.stamp.nanosec = static_cast<uint32_t>((time_stamp - Pose_Stamped_msg.header.stamp.sec) * 1000000000);
-                        Pose_Stamped_msg.pose.orientation.x = Q[0];
-                        Pose_Stamped_msg.pose.orientation.y = Q[1];
-                        Pose_Stamped_msg.pose.orientation.z = Q[2];
-                        Pose_Stamped_msg.pose.orientation.w = Q[3];
-
-                        pose_stamped_pub_->publish(Pose_Stamped_msg);
-                    }
-#ifdef RM_DEBUG_MODE
-                    if (this->debug)
-                    {
-                        double time2, time3;
-                        time2 = rclcpp::Clock().now().seconds();
-                        // time3 = this->time_send.seconds();
-                        packet.unload_data(time3, 6);
-                        if (this->max_time < (time2 - time3))
-                            this->max_time = (time2 - time3);
-                        if (this->min_time > (time2 - time3))
-                            this->min_time = (time2 - time3);
-
-                        RCLCPP_INFO(node_->get_logger(), "all[%d]: %f", recv_tid, (time2 - time3));
-                        // RCLCPP_INFO(node_->get_logger(), "max: %f", this->max_time);
-                        // RCLCPP_INFO(node_->get_logger(), "min: %f", this->min_time);
-                        if ((time2 - time3) >= 0.001)
-                            this->drop_pkg++;
-                        RCLCPP_INFO(node_->get_logger(), "drop: %d", this->drop_pkg);
-                        RCLCPP_INFO(node_->get_logger(), "drop rate: %f", float(this->drop_pkg * 1.0 / this->tid * 1.0));
-
-                        double q1, q2, q3, q0;
-                        float c_pitch, c_yaw;
-                        q3 = Pose_Stamped_msg.pose.orientation.w;
-                        q0 = Pose_Stamped_msg.pose.orientation.x;
-                        q1 = Pose_Stamped_msg.pose.orientation.y;
-                        q2 = Pose_Stamped_msg.pose.orientation.z;
-                        c_yaw = atan2(2.0f * (q1 * q2 + q0 * q3), q0 * q0 + q1 * q1 - q2 * q2 - q3 * q3) * 57.3;
-                        c_pitch = -asin(2.0f * (q1 * q3 - q0 * q2)) * 57.3;
-
-                        RCLCPP_INFO(
-                            node_->get_logger(),
-                            "c_pitch: %f, c_yaw: %f", c_pitch, c_yaw);
-                        RCLCPP_INFO(node_->get_logger(), "RECV-GyroQuaternions: (%f, %f, %f, %f)", Pose_Stamped_msg.pose.orientation.x,
-                                    Pose_Stamped_msg.pose.orientation.y, Pose_Stamped_msg.pose.orientation.z, Pose_Stamped_msg.pose.orientation.w);
-                        RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Pose_Stamped_msg.header.stamp.sec + 10e-9 * Pose_Stamped_msg.header.stamp.nanosec);
-                    }
-#endif
                     this->last_tid = recv_tid;
                 }
             }

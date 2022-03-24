@@ -14,6 +14,7 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include <string>
 #include <math.h>
+#include "rm_util/rm_util.hpp"
 
 namespace rm_base
 {
@@ -53,7 +54,6 @@ namespace rm_base
          * @brief 线程
          */
         std::unique_ptr<std::thread> listen_thread_;
-        std::unique_ptr<std::thread> cam_imu_syn_thread_;
         /**
          * @brief 接口工具
          */
@@ -64,7 +64,6 @@ namespace rm_base
          * @brief 【ROS2】订阅-subscription、发布-publisher、服务端-service
          */
         rclcpp::Subscription<rm_interfaces::msg::GimbalCmd>::SharedPtr cmd_gimbal_sub_;
-        rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_stamped_pub_;
         rclcpp::Publisher<rm_interfaces::msg::ShootSpeed>::SharedPtr shoot_speed_pub_;
         rclcpp::Service<rm_interfaces::srv::GetMode>::SharedPtr get_mode_srv_;
         rclcpp::Service<rm_interfaces::srv::GetColor>::SharedPtr get_color_srv_;
@@ -92,24 +91,20 @@ namespace rm_base
          */
         uint32_t tid = 0;                   //包编号
         uint32_t last_tid = 0;
-        int mode = 0xee;                       //模式：0-正常，1-自瞄，2-小符，3-大符
+        int mode = 0x00;                       //模式：0-正常，1-自瞄，2-小符，3-大符
         int color = 1;                      //颜色：0-blue，1-red
         float last_shoot_speed = 0;
         std::string node_name;
+        std::string node_namespace;
+        char *n_namespace;
 
         /**
          * @brief 测试变量
          */
         rclcpp::Time time_send;
         rclcpp::Time time_recv;
-        double max_time = 0;
-        double min_time = 10000.0;
-        double time_RTT[100]={0};
-        int time_id = 0;
-        int RTT_time = 0;
-        double time_delay = 0;
-        int drop_pkg = 0;
         float yaw=0,pitch=0;
+        int mode_change_id = 0;
     };
 }
 

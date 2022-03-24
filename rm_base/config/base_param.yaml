@@ -1,0 +1,8 @@
+/**:
+    ros__parameters:
+        serial_name: '/dev/ttyACM0'
+        serial_send: True
+        serial_recv: False
+        serial_bps: 1152000
+        debug: True
+        custom_qos: True

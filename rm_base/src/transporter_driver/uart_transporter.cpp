@@ -170,11 +170,11 @@ namespace rm_base
         //     return false;
         // }
         // 设置串口数据帧格式
-        if (set_param(speed_, flow_ctrl_, databits_, stopbits_, parity_))
-        {
-            RCLCPP_INFO(this->node_->get_logger(),"set param: speed:%d",speed_);
+        if (!set_param(speed_, flow_ctrl_, databits_, stopbits_, parity_))
             return false;
-        }
+        else
+            RCLCPP_INFO(this->node_->get_logger(),"set param: speed:%d",speed_);
+            
         is_open_ = true;
         return true;
     }

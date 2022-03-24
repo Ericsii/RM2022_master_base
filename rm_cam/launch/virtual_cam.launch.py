@@ -5,7 +5,7 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    video_path = os.path.join(get_package_share_directory("rm_cam"), "resource", "1.mp4")
+    video_path = os.path.join(get_package_share_directory("rm_cam"), "resource", "video2.mp4")
 
     virtual_cam_node = Node(
         package="rm_cam",
@@ -16,7 +16,7 @@ def generate_launch_description():
             'camera_name': 'virtual_camera',
             'camera_k': [1552.7, 0.0, 640.0, 0.0, 1537.9, 360.0, 0.0, 0.0, 1.0],
             'camera_d': [0.0, 0.0, 0.0, 0.0, 0.0],
-            'fps': 200,
+            'fps': 20,
             "custom_qos": True
         }],
         output='screen'

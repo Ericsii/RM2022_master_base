@@ -66,7 +66,7 @@ namespace rm_base
 
             //topic订阅：cmd_gimbal, 云台控制订阅，并将数据发送到串口
             cmd_gimbal_sub_ = node_->create_subscription<rm_interfaces::msg::GimbalCmd>(
-                "/cmd_gimbal",
+                "test/cmd_gimbal",
                 cmd_gimbal_sub_qos_profile,
                 std::bind(&SimpleRobotBaseNode::gimbal_cmd_cb, this, std::placeholders::_1)
                 );
@@ -135,7 +135,7 @@ namespace rm_base
     //topic订阅返回函数：发送串口数据
     void SimpleRobotBaseNode::gimbal_cmd_cb(const rm_interfaces::msg::GimbalCmd::SharedPtr msg)
     {
-        if(this->SerialSend && (this->mode!=0xee))
+        if(this->SerialSend)
         {
             if((this->tid >= (2147483647-100)))
                 this->tid = 0;
@@ -167,8 +167,9 @@ namespace rm_base
             }
             else if (this->node_name == "nahsor_test")
             {
-                packet.load_data<unsigned char>(0xd1, 5);
-                packet.load_data<double>(rclcpp::Clock().now().seconds(), 22);
+                packet.load_data<unsigned char>(0xa1, 5);
+                packet.load_data<unsigned char>(0x01, 6);
+                packet.load_data<float>(0.12, 14);
             }
             else
             {
@@ -177,10 +178,10 @@ namespace rm_base
                      * 7-10  yaw 
                      * 11-14 pitch 
                      * 15-22 timestamp*/
-                packet.load_data<unsigned char>(frame_type::TimeStampSyn, 5);
+                packet.load_data<unsigned char>(frame_type::ChangeMode, 5);
                 packet.load_data<float>(yaw, 7);
                 packet.load_data<float>(pitch, 11);
-                packet.load_data<double>(rclcpp::Clock().now().seconds(), 15);
+                // packet.load_data<double>(rclcpp::Clock().now().seconds(), 15);
             }
                 /** RMUA
                 packet.load_data<float>(msg->velocity.yaw, 13);
@@ -228,9 +229,9 @@ namespace rm_base
                 packet.unload_data<float>(pitch, 11);
                 RCLCPP_INFO(node_->get_logger(), "pitch [%f]", pitch);
                 RCLCPP_INFO(node_->get_logger(), "yaw [%f]", yaw);
-                double timex;
-                packet.unload_data<double>(timex, 6);
-                RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
+                // double timex;
+                // packet.unload_data<double>(timex, 6);
+                // RCLCPP_INFO(node_->get_logger(), "SEND-time: '%f'",  timex);
             }      
 #endif            
 
@@ -310,8 +311,8 @@ namespace rm_base
                         packet.unload_data<float>(yaw, 7);
                         packet.unload_data<float>(pitch, 11);
                         RCLCPP_INFO(node_->get_logger(), "\nRECV packet [%d]", recv_tid);
-                        // RCLCPP_INFO(node_->get_logger(), "pitch [%f]", pitch);
-                        // RCLCPP_INFO(node_->get_logger(), "yaw [%f]", yaw);
+                        RCLCPP_INFO(node_->get_logger(), "pitch [%f]", pitch);
+                        RCLCPP_INFO(node_->get_logger(), "yaw [%f]", yaw);
                         RCLCPP_INFO(node_->get_logger(), "RECV-cmd: '%x'", cmd);
                         this->time_recv = rclcpp::Clock().now();
                         // double timer = rclcpp::Clock().now().seconds();
@@ -341,7 +342,7 @@ namespace rm_base
                            
                         auto set_mode_rqt_ = std::make_shared<rm_interfaces::srv::SetMode::Request>();
                         
-                        if (this->mode != mode)
+                        if (this->mode != 0x00)
                         {
                             if(mode<0xaa)
                             {
@@ -455,12 +456,6 @@ namespace rm_base
                         packet.unload_data<float>(Q[2], 14);
                         packet.unload_data<float>(Q[3], 18);
                         packet.unload_data(time_stamp, 22);
-                        this->RTT_time++;
-                        this->time_RTT[1] = rclcpp::Clock().now().seconds() - time_stamp;
-                        this->time_RTT[0]+=this->time_RTT[1];
-                        this->time_delay = (this->time_RTT[0])/(this->RTT_time);
-
-                        time_stamp = rclcpp::Clock().now().seconds() - this->time_delay/2;
                         time_stamp = rclcpp::Clock().now().seconds();
                         geometry_msgs::msg::PoseStamped Pose_Stamped_msg;
                         Pose_Stamped_msg.header.stamp.sec = static_cast<int32_t>(time_stamp);
@@ -493,6 +488,10 @@ namespace rm_base
                             RCLCPP_INFO(node_->get_logger(), "RECV-TIME:'%f'", Pose_Stamped_msg.header.stamp.sec+10e-9*Pose_Stamped_msg.header.stamp.nanosec);
                             RCLCPP_INFO(node_->get_logger(), "time_RTT[%d]: %f", recv_tid, this->time_RTT[recv_tid]);
                             RCLCPP_INFO(node_->get_logger(), "delay[%d]: %f", recv_tid, this->time_delay);
+                            // Pose_Stamped_msg.pose.orientation.x = float(int(Q[0]*1000))/1000.0;
+                            // Pose_Stamped_msg.pose.orientation.y = float(int(Q[1]*1000))/1000.0;
+                            // Pose_Stamped_msg.pose.orientation.z = float(int(Q[2]*1000))/1000.0;
+                            // Pose_Stamped_msg.pose.orientation.w = float(int(Q[3]*1000))/1000.0;
                         }
 #endif
                     }

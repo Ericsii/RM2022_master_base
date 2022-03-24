@@ -7,10 +7,11 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     param_path = os.path.join(get_package_share_directory("rm_entity_cam"), "config/cam_param.yaml")
-
+    robot_name = 'infantry4'
     mv_cam_node = Node(
         package="rm_entity_cam",
         executable="mindvision_cam",
+        namespace=robot_name,
         name="mindvision_camera",
         parameters=[param_path],
         output='screen'

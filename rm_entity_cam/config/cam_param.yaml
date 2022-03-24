@@ -1,16 +1,15 @@
-##需要进入root用户才能启动相机结点（除虚拟相机外）
-/mindvision_camera:
+##若未设置udev权限，则需要进入root用户才能启动相机结点（除虚拟相机外）
+infantry4/mindvision_camera:
     ros__parameters:
         camera_name: 'mv_camera'
         sn: '048021610077'
-        config_path: './master-base/rm_entity_cam/config/048021610078.Config'
-        camera_k: [2032.263030, 0.000000, 625.248326, 0.000000, 2033.755589, 507.872755, 0.000000, 0.000000, 1.000000]
-        camera_d: [-0.065000, 0.116275, -0.000281, 0.001765, 0.000000]
+        config_path: './master-base/rm_entity_cam/config/048021610074.Config'
+        camera_info_url: 'package://rm_entity_cam/config/048021610074.yaml'
         fps: 200
         best_effort_qos: true
 
 
-/daheng_camera:
+infantry4/daheng_camera:
     ros__parameters:
         camera_name: 'daheng_camera'
         sn: 'KN0210040024'
@@ -21,3 +20,12 @@
         camera_d: [0.0, 0.0, 0.0, 0.0, 0.0]
         fps: 100
         best_effort_qos: false
+
+/**:
+    ros__parameters:
+        serial_name: '/dev/ttyInfanTTL4'
+        serial_send: False
+        serial_recv: True
+        serial_bps: 1152000
+        debug: False
+        custom_qos: True
