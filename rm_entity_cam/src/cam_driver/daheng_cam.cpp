@@ -259,6 +259,7 @@ namespace rm_cam
                 "ERROR:[%d] - Raw2RGB failed!", DXstatus);
             return false;
         }
+        cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
         //调用 GXQBuf 将图像 buf 放回库中继续采图
         GXstatus = GXQBuf(this->_hDevice, this->_pFrameBuffer);
         if (GXstatus != GX_STATUS_SUCCESS)
@@ -331,7 +332,7 @@ namespace rm_cam
         this->_stClrImageProc.bAccelerate = false;
         this->_stClrImageProc.bDefectivePixelCorrect = false;
         this->_stClrImageProc.bDenoise = false;
-        this->_stClrImageProc.bFlip = true;
+        this->_stClrImageProc.bFlip = false;
         this->_stClrImageProc.bSharpness = false;
         this->_stClrImageProc.fSharpFactor = 1.5;         // 锐化强度因子[]
         this->_stClrImageProc.cvType = RAW2RGB_NEIGHBOUR; //RAW2RGB使用的算法
@@ -428,6 +429,9 @@ namespace rm_cam
                     delete[] this->_stClrImageProc.parrCC;
                     this->_stClrImageProc.parrCC = NULL;
                 }
+                RCLCPP_FATAL(
+                    this->_node->get_logger(),
+                        "ERROR:[%d] Read lut digit failed!", DXstatus);
                 return false;
             }
         }

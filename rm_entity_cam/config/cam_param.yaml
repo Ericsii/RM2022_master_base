@@ -9,23 +9,12 @@ infantry4/mindvision_camera:
         best_effort_qos: true
 
 
-infantry4/daheng_camera:
+daheng_camera:
     ros__parameters:
         camera_name: 'daheng_camera'
-        sn: 'KN0210040024'
-        config_path: './master-base/rm_cam/config/daheng_config/KN0210040024.txt'
-        lut_config_path: ''
-        lut_detail: [60., 2., 0.] # (!必须使用小数形式)对比度调节参数[-50-100] 伽马调节参数[0.1-10] 亮度调节参数[-150-150]
-        camera_k: [1552.7, 0.0, 640.0, 0.0, 1537.9, 360.0, 0.0, 0.0, 1.0]
-        camera_d: [0.0, 0.0, 0.0, 0.0, 0.0]
-        fps: 100
+        sn: 'KN0210040023'
+        config_path: './master-base/rm_entity_cam/config/daheng_cam_config.txt'
+        camera_info_url: 'package://rm_entity_cam/config/KN0210040023.yaml'
+        lut_detail: [0., 2., 0.] # (!必须使用小数形式)对比度调节参数[-50-100] 伽马调节参数[0.1-10] 亮度调节参数[-150-150]
+        fps: 200
         best_effort_qos: false
-
-/**:
-    ros__parameters:
-        serial_name: '/dev/ttyInfanTTL4'
-        serial_send: False
-        serial_recv: True
-        serial_bps: 1152000
-        debug: False
-        custom_qos: True

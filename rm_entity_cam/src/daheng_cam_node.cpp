@@ -24,6 +24,16 @@ namespace rm_cam
         std::string lut_config_path = this->node_->get_parameter("lut_config_path").as_string();
         std::vector<double> lut_detail = this->node_->get_parameter("lut_detail").as_double_array();
 
+        RCLCPP_INFO(
+            node_->get_logger(),
+            "[daheng_cam] SN: %s", cam_sn.c_str()
+        );
+
+        RCLCPP_INFO(
+            node_->get_logger(),
+            "[daheng_cam] config path: %s", config_path.c_str()
+        );
+
         cam_dev_ = std::make_shared<DaHengCam>(cam_sn, node_, config_path, lut_config_path, lut_detail);
         if (!this->cam_dev_->open())
         {

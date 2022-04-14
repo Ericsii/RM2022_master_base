@@ -201,3 +201,4 @@ AMENT_IGNORE
 
 *.avi
 *.mp4
+*.cache
