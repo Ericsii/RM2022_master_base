@@ -1,0 +1,13 @@
+[Unit]
+Description=SCURM2022 Auto Start Service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/scurm/ros_workspace/scu_rm_ros/launch
+ExecStart=/home/scurm/ros_workspace/scu_rm_ros/launch/launch_daemon.sh
+ExecStop=/home/scurm/ros_workspace/scu_rm_ros/launch/launch_ext.sh
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
