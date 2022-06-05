@@ -11,9 +11,12 @@
 #include "rm_interfaces/srv/get_mode.hpp"
 #include "rm_interfaces/srv/set_mode.hpp"
 #include "rm_interfaces/srv/get_color.hpp"
+#include "rm_interfaces/srv/set_color.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "sensor_msgs/msg/imu.hpp"
 #include <string>
 #include <math.h>
+#include <vector>
 #include "rm_util/rm_util.hpp"
 
 namespace rm_base
@@ -64,18 +67,20 @@ namespace rm_base
          * @brief 【ROS2】订阅-subscription、发布-publisher、服务端-service
          */
         rclcpp::Subscription<rm_interfaces::msg::GimbalCmd>::SharedPtr cmd_gimbal_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
         rclcpp::Publisher<rm_interfaces::msg::ShootSpeed>::SharedPtr shoot_speed_pub_;
         rclcpp::Service<rm_interfaces::srv::GetMode>::SharedPtr get_mode_srv_;
         rclcpp::Service<rm_interfaces::srv::GetColor>::SharedPtr get_color_srv_;
-        rclcpp::Client<rm_interfaces::srv::SetMode>::SharedPtr set_autoaim_mode_cli_;
-        rclcpp::Client<rm_interfaces::srv::SetMode>::SharedPtr set_nahsor_mode_cli_;
+        std::vector<rclcpp::Client<rm_interfaces::srv::SetMode>::SharedPtr> set_mode_cli_;
+        std::vector<rclcpp::Client<rm_interfaces::srv::SetColor>::SharedPtr> set_color_cli_;
 
         /**
          * @brief 订阅处理函数
          * 
          * @param msg 
          */
-        void gimbal_cmd_cb(const rm_interfaces::msg::GimbalCmd::SharedPtr msg);
+        void gimbal_cmd_cb(const rm_interfaces::msg::GimbalCmd::SharedPtr gimbel_msg_temp);
+        void imu_cb(const sensor_msgs::msg::Imu::SharedPtr msg);
         
         /**
          * @brief ros参数--全局变量（串口）
@@ -91,12 +96,17 @@ namespace rm_base
          */
         uint32_t tid = 0;                   //包编号
         uint32_t last_tid = 0;
-        int mode = 0x00;                       //模式：0-正常，1-自瞄，2-小符，3-大符
+        int last_mode = 0x00;                       //模式：0-正常，1-自瞄，2-小符，3-大符
         int color = 1;                      //颜色：0-blue，1-red
         float last_shoot_speed = 0;
         std::string node_name;
         std::string node_namespace;
+        std::size_t ns_infantry = std::string::npos;
+        std::size_t ns_sentry = std::string::npos;
+        std::size_t ns_hero = std::string::npos;
+        std::size_t ns_engineer = std::string::npos;
         char *n_namespace;
+        rm_interfaces::msg::GimbalCmd::SharedPtr gimbel_msg;
 
         /**
          * @brief 测试变量

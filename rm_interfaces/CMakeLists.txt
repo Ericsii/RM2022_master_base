@@ -28,6 +28,7 @@ set(srv_files
   "srv/SetMode.srv"
   "srv/GetMode.srv"
   "srv/GetColor.srv"
+  "srv/SetColor.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

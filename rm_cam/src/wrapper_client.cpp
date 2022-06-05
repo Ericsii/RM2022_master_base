@@ -106,7 +106,7 @@ namespace rm_cam
         }
         auto request = std::make_shared<rm_interfaces::srv::GetCameraInfo::Request>();
         auto result_future = client->async_send_request(request);
-        if (exec->spin_until_future_complete(result_future, 20s) !=
+        if (exec->spin_until_future_complete(result_future, 30s) !=
             rclcpp::FutureReturnCode::SUCCESS)
         {
             RCLCPP_ERROR(

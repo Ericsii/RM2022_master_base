@@ -21,6 +21,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(rm_interfaces REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(rm_util REQUIRED)
 
 # Include
@@ -38,6 +39,7 @@ set(dependencies
     rm_interfaces
     geometry_msgs
     std_msgs
+    sensor_msgs
     rm_util
 )
 ament_target_dependencies(${PROJECT_NAME} ${dependencies})

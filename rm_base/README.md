@@ -23,18 +23,30 @@
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
-|yaw|偏移yaw|float32【7-10】|
-|pitch|偏移pitch|float32【11-14】|
+|yaw|目标yaw|float32【5-8】|
+|pitch|目标pitch|float32【9-12】|
+|gyro_yaw|陀螺仪读出的当前yaw|float32【13-16】|
+|angular_velocity_yaw|yaw角速度|float32【17-20】|
+|gyro_pitch|陀螺仪读出的当前pitch|float32【21-24】|
+|angular_velocity_pitch|pitch角速度|float32【25-28】|
 
-- 2.哨兵帧
+
+- 2.哨兵云台控制帧
 
 |数据|说明|type(数据位)|
 |-|-|-|
 |tid|上位机帧编号|int32【1-4】|
 |type|哨兵状态（0x2a自瞄,0x3a巡逻,0x4a遥控器）|unsigned char【5】|
 |shoot|发弹 0x4b发射|unsigned char【6】|
-|yaw|偏移yaw|float32【6-9】|
-|pitch|偏移pitch|float32【10-13】|
+|yaw|偏移yaw|float32【7-10】|
+|pitch|偏移pitch|float32【11-14】|
+
+- 2.哨兵上下云台通信帧
+|数据|说明|type(数据位)|
+|-|-|-|
+|tid|上位机帧编号|int32【1-4】|
+|type|哨兵（0x5a 转发给另一个云台）|unsigned char【5】|
+|num|当前识别到车的编号label|int32【6-9】|
 
 <!-- - 3.(不需要使用)时间戳同步帧(下位机接收到同步帧后原封不动返回)
 

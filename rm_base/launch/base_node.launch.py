@@ -8,7 +8,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     # 用于下位机发送模式、子弹射速，上位机发送pitch、yaw云台控制，
     base_param_path = os.path.join(get_package_share_directory("rm_base"), "config/base_param.yaml")
-    robot_name = 'infantry4'
+    robot_name = 'infantry5'
     base_node = Node(
             package='rm_base', 
             executable='robot_base',
