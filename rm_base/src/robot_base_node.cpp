@@ -1,14 +1,4 @@
 #include "rm_base/robot_base_node.hpp"
-#include "rm_base/uart_transporter.hpp"
-#include "rm_interfaces/qos_policy.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include <string>
-#include <sstream>
-#include <chrono>
-#include <thread>
-#include <memory>
-#include <iostream>
-#include <vector>
 
 using namespace std::chrono_literals;
 
@@ -382,6 +372,7 @@ namespace rm_base
                             // RCLCPP_ERROR(node_->get_logger(), "【SHOOT-SPEED %f】ERROR!!!", shoot_speed);
                             shoot_speed = 30.;
                         }
+                        // RCLCPP_INFO(node_->get_logger(), "RECV-mode: '%x'", mode);
 #ifdef RM_DEBUG_MODE
                         if (this->debug)
                         {

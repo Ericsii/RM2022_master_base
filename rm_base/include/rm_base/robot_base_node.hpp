@@ -1,9 +1,6 @@
 #ifndef RM_BASE__INFANTRY_BASE_NODE_HPP_
 #define RM_BASE__INFANTRY_BASE_NODE_HPP_
 
-#include <thread>
-#include <memory>
-#include "rclcpp/rclcpp.hpp"
 #include "rm_base/transporter_interface.hpp"
 #include "rm_base/fixed_packet_tool.hpp"
 #include "rm_interfaces/msg/gimbal_cmd.hpp"
@@ -12,12 +9,22 @@
 #include "rm_interfaces/srv/set_mode.hpp"
 #include "rm_interfaces/srv/get_color.hpp"
 #include "rm_interfaces/srv/set_color.hpp"
+#include "rm_util/rm_util.hpp"
+#include "rm_base/uart_transporter.hpp"
+#include "rm_interfaces/qos_policy.hpp"
+
+#include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/imu.hpp"
+
 #include <string>
 #include <math.h>
 #include <vector>
-#include "rm_util/rm_util.hpp"
+#include <sstream>
+#include <chrono>
+#include <thread>
+#include <memory>
+#include <iostream>
 
 namespace rm_base
 {
