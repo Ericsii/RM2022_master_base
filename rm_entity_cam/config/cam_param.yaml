@@ -1,5 +1,5 @@
 ##若未设置udev权限，则需要进入root用户才能启动相机结点（除虚拟相机外）
-infantry4/mindvision_camera:
+sentry/mindvision_camera:
     ros__parameters:
         camera_name: 'mv_camera'
         sn: '048021610074'

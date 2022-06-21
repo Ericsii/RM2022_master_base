@@ -353,17 +353,8 @@ namespace rm_base
                         float r = 0.5; //低级滤波参数
                         rm_interfaces::msg::ShootSpeed Shoot_Speed_msg;
                         packet.unload_data(shoot_speed, 7);
-                        if (shoot_speed > 10 && shoot_speed <= 20)
+                        if (shoot_speed > 10 && shoot_speed <= 30)
                         {
-                            if (this->last_shoot_speed > 20)
-                                this->last_shoot_speed = 18.;
-                            Shoot_Speed_msg.shoot_speed = r * this->last_shoot_speed + (1 - r) * shoot_speed;
-                            shoot_speed_pub_->publish(Shoot_Speed_msg);
-                        }
-                        else if (shoot_speed > 20 && shoot_speed <= 40)
-                        {
-                            if (this->last_shoot_speed < 20)
-                                this->last_shoot_speed = 28.;
                             Shoot_Speed_msg.shoot_speed = r * this->last_shoot_speed + (1 - r) * shoot_speed;
                             shoot_speed_pub_->publish(Shoot_Speed_msg);
                         }
