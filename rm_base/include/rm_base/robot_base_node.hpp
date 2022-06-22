@@ -104,6 +104,7 @@ namespace rm_base
         uint32_t tid = 0;                   //包编号
         uint32_t last_tid = 0;
         int last_mode = 0x00;                       //模式：0-正常，1-自瞄，2-小符，3-大符
+        int last_color = 0xbb; //自己颜色：0xbb蓝，0x11红
         int color = 1;                      //颜色：0-blue，1-red
         float last_shoot_speed = 0;
         std::string node_name;

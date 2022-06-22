@@ -394,16 +394,19 @@ namespace rm_base
                         packet.unload_data(color, 6);
                         auto set_color_rqt_ = std::make_shared<rm_interfaces::srv::SetColor::Request>();
                         set_color_rqt_->color = color;
-                        for (auto set_cli_ : set_color_cli_)
+                        if (color != last_color)
                         {
-                            RCLCPP_INFO(node_->get_logger(), "set_color_cli_ [%s]", set_cli_->get_service_name());
-                            if (set_cli_->wait_for_service(0.1s))
+                            for (auto set_cli_ : set_color_cli_)
                             {
-                                auto color_set_result = set_cli_->async_send_request(set_color_rqt_);
-                                if (!color_set_result.get()->success)
+                                RCLCPP_INFO(node_->get_logger(), "set_color_cli_ [%s]", set_cli_->get_service_name());
+                                if (set_cli_->wait_for_service(0.1s))
                                 {
-                                    RCLCPP_ERROR(node_->get_logger(), "%s Color Change Fail!!!", set_cli_->get_service_name());
-                                    color_set_result = set_cli_->async_send_request(set_color_rqt_);
+                                    auto color_set_result = set_cli_->async_send_request(set_color_rqt_);
+                                    if (!color_set_result.get()->success)
+                                    {
+                                        RCLCPP_ERROR(node_->get_logger(), "%s Color Change Fail!!!", set_cli_->get_service_name());
+                                        color_set_result = set_cli_->async_send_request(set_color_rqt_);
+                                    }
                                 }
                             }
                         }
@@ -423,6 +426,7 @@ namespace rm_base
                                 RCLCPP_ERROR(node_->get_logger(), "ERROR Color package !!!");
                         }
 #endif
+                        last_color = color;
                     }
                     this->last_tid = recv_tid;
                 }
